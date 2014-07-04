@@ -102,6 +102,28 @@ import openfl.Lib;
 		
 		
 		
+		var image = new Image ();
+		id = "assets/throttleControlBackground.png";
+		images.set (id, image);
+		image.onload = image_onLoad;
+		image.src = id;
+		//var loader:Loader = new Loader();
+		//loaders.set("assets/throttleControlBackground.png", loader);
+		total ++;
+		
+		
+		
+		var image = new Image ();
+		id = "assets/throttleHandle.png";
+		images.set (id, image);
+		image.onload = image_onLoad;
+		image.src = id;
+		//var loader:Loader = new Loader();
+		//loaders.set("assets/throttleHandle.png", loader);
+		total ++;
+		
+		
+		
 		if (total == 0) {
 			
 			start ();

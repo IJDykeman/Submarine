@@ -480,6 +480,7 @@ openfl.display.DisplayObject.prototype = $extend(openfl.events.EventDispatcher.p
 		return this.__y = value;
 	}
 	,__class__: openfl.display.DisplayObject
+	,__properties__: {set_y:"set_y",get_y:"get_y",set_x:"set_x",get_x:"get_x",set_width:"set_width",get_width:"get_width",set_visible:"set_visible",get_visible:"get_visible",set_transform:"set_transform",get_transform:"get_transform",set_scrollRect:"set_scrollRect",get_scrollRect:"get_scrollRect",set_scaleY:"set_scaleY",get_scaleY:"get_scaleY",set_scaleX:"set_scaleX",get_scaleX:"get_scaleX",set_rotation:"set_rotation",get_rotation:"get_rotation",get_root:"get_root",set_name:"set_name",get_name:"get_name",get_mouseY:"get_mouseY",get_mouseX:"get_mouseX",set_mask:"set_mask",get_mask:"get_mask",set_height:"set_height",get_height:"get_height",set_filters:"set_filters",get_filters:"get_filters",set_alpha:"set_alpha",get_alpha:"get_alpha"}
 });
 openfl.display.InteractiveObject = function() {
 	openfl.display.DisplayObject.call(this);
@@ -784,6 +785,7 @@ openfl.display.DisplayObjectContainer.prototype = $extend(openfl.display.Interac
 		return this.__children.length;
 	}
 	,__class__: openfl.display.DisplayObjectContainer
+	,__properties__: $extend(openfl.display.InteractiveObject.prototype.__properties__,{get_numChildren:"get_numChildren"})
 });
 openfl.display.Sprite = function() {
 	openfl.display.DisplayObjectContainer.call(this);
@@ -875,9 +877,11 @@ openfl.display.Sprite.prototype = $extend(openfl.display.DisplayObjectContainer.
 		return this.__graphics;
 	}
 	,__class__: openfl.display.Sprite
+	,__properties__: $extend(openfl.display.DisplayObjectContainer.prototype.__properties__,{get_graphics:"get_graphics"})
 });
 var Actor = function() {
 	openfl.display.Sprite.call(this);
+	this.location = new Vector(0,0);
 };
 $hxClasses["Actor"] = Actor;
 Actor.__name__ = ["Actor"];
@@ -930,6 +934,18 @@ ApplicationMain.embed = $hx_exports.openfl.embed = function(elementName,width,he
 	ApplicationMain.images.set(id,image2);
 	image2.onload = ApplicationMain.image_onLoad;
 	image2.src = id;
+	ApplicationMain.total++;
+	var image3 = new Image();
+	id = "assets/throttleControlBackground.png";
+	ApplicationMain.images.set(id,image3);
+	image3.onload = ApplicationMain.image_onLoad;
+	image3.src = id;
+	ApplicationMain.total++;
+	var image4 = new Image();
+	id = "assets/throttleHandle.png";
+	ApplicationMain.images.set(id,image4);
+	image4.onload = ApplicationMain.image_onLoad;
+	image4.src = id;
 	ApplicationMain.total++;
 	if(ApplicationMain.total == 0) ApplicationMain.start(); else {
 		var $it0 = ApplicationMain.urlLoaders.keys();
@@ -984,8 +1000,8 @@ ApplicationMain.preloader_onComplete = function(event) {
 	if(hasMain) Reflect.callMethod(Main,Reflect.field(Main,"main"),[]); else {
 		var instance = Type.createInstance(DocumentClass,[]);
 		if(js.Boot.__instanceof(instance,openfl.display.DisplayObject)) openfl.Lib.current.addChild(instance); else {
-			haxe.Log.trace("Error: No entry point found",{ fileName : "ApplicationMain.hx", lineNumber : 213, className : "ApplicationMain", methodName : "preloader_onComplete"});
-			haxe.Log.trace("If you are using DCE with a static main, you may need to @:keep the function",{ fileName : "ApplicationMain.hx", lineNumber : 214, className : "ApplicationMain", methodName : "preloader_onComplete"});
+			haxe.Log.trace("Error: No entry point found",{ fileName : "ApplicationMain.hx", lineNumber : 235, className : "ApplicationMain", methodName : "preloader_onComplete"});
+			haxe.Log.trace("If you are using DCE with a static main, you may need to @:keep the function",{ fileName : "ApplicationMain.hx", lineNumber : 236, className : "ApplicationMain", methodName : "preloader_onComplete"});
 		}
 	}
 };
@@ -1005,8 +1021,10 @@ var Main = function() {
 	this.world = new World();
 	this.addChild(this.world);
 	this.stage.addEventListener(openfl.events.Event.ENTER_FRAME,$bind(this,this.onEnterFrame));
+	this.stage.addEventListener(openfl.events.Event.RESIZE,$bind(this,this.onResize));
 	this.addEventListener(openfl.events.MouseEvent.MOUSE_DOWN,$bind(this,this.onMouseDown));
 	this.mainUI = new UI();
+	this.mainUI.set_y(0);
 	this.addChild(this.mainUI);
 };
 $hxClasses["Main"] = Main;
@@ -1022,6 +1040,11 @@ Main.prototype = $extend(openfl.display.Sprite.prototype,{
 		var clickY;
 		clickY = js.Boot.__cast(event.stageY , Int);
 		this.handleUIAction(this.mainUI.getActionFromClick(clickX,clickY));
+	}
+	,onResize: function(e) {
+		var scaleX = this.stage.stageWidth;
+		var scaleY = this.stage.stageHeight;
+		this.mainUI.handleResize(scaleX,scaleY);
 	}
 	,handleUIAction: function(action) {
 		var _g = action.type;
@@ -1131,6 +1154,12 @@ var DefaultAssetLibrary = function() {
 	this.path.set(id,id);
 	this.type.set(id,openfl.AssetType.IMAGE);
 	id = "assets/sub.png";
+	this.path.set(id,id);
+	this.type.set(id,openfl.AssetType.IMAGE);
+	id = "assets/throttleControlBackground.png";
+	this.path.set(id,id);
+	this.type.set(id,openfl.AssetType.IMAGE);
+	id = "assets/throttleHandle.png";
 	this.path.set(id,id);
 	this.type.set(id,openfl.AssetType.IMAGE);
 };
@@ -1268,11 +1297,14 @@ UnderwaterObject.prototype = $extend(Actor.prototype,{
 	}
 	,getDrag: function() {
 		var facingAreaOfShip = 100;
-		return new Vector(-0.5 * this.drag * this.velocity.x * this.velocity.x * Constants.densityOf20DegreeWater * facingAreaOfShip,-0.5 * this.drag * this.velocity.y * this.velocity.y * Constants.densityOf20DegreeWater * facingAreaOfShip);
+		return new Vector(-0.5 * this.drag * this.velocity.x * this.velocity.x * Constants.densityOf20DegreeWater * facingAreaOfShip,-0.5 * this.drag * this.velocity.y * this.velocity.y * Constants.densityOf20DegreeWater * facingAreaOfShip * 600 * (this.velocity.y / Math.abs(this.velocity.y + .000000000001)));
 	}
 	,getBouyancyAndGravityForce: function() {
 		var facingAreaOfShip = 29.76;
-		return new Vector(0,0);
+		var heightInMeters = this.get_height() / Constants.pixelsPerMeter;
+		var fractionBelowWater = Helpers.clamp((this.location.y + heightInMeters - Constants.oceanLevel) / heightInMeters,0,1);
+		if(fractionBelowWater != 1) haxe.Log.trace("belowWater " + fractionBelowWater,{ fileName : "UnderwaterObject.hx", lineNumber : 42, className : "UnderwaterObject", methodName : "getBouyancyAndGravityForce"});
+		return new Vector(0,-Constants.g * this.volume * fractionBelowWater * Constants.densityOf20DegreeWater + this.mass * Constants.g);
 	}
 	,getAllForces: function() {
 		var drag = this.getDrag();
@@ -1296,6 +1328,12 @@ Flotsam.__super__ = UnderwaterObject;
 Flotsam.prototype = $extend(UnderwaterObject.prototype,{
 	__class__: Flotsam
 });
+var Helpers = function() { };
+$hxClasses["Helpers"] = Helpers;
+Helpers.__name__ = ["Helpers"];
+Helpers.clamp = function(value,min,max) {
+	if(value < min) return min; else if(value > max) return max; else return value;
+};
 var HxOverrides = function() { };
 $hxClasses["HxOverrides"] = HxOverrides;
 HxOverrides.__name__ = ["HxOverrides"];
@@ -1450,14 +1488,13 @@ NoUIAction.prototype = $extend(UIAction.prototype,{
 	__class__: NoUIAction
 });
 var Ocean = function() {
-	this.oceanLevel = 6 * Constants.pixelsPerMeter;
 	openfl.display.Sprite.call(this);
 	this.square = new openfl.display.Sprite();
 	this.square.get_graphics().lineStyle(0,2705779);
 	this.square.get_graphics().beginFill(2705779,1);
 	this.square.get_graphics().drawRect(0,0,2000,2000);
 	this.square.set_x(0);
-	this.square.set_y(this.oceanLevel);
+	this.square.set_y(Constants.oceanLevel * Constants.pixelsPerMeter);
 	this.addChild(this.square);
 };
 $hxClasses["Ocean"] = Ocean;
@@ -1481,6 +1518,14 @@ Reflect.field = function(o,field) {
 };
 Reflect.setField = function(o,field,value) {
 	o[field] = value;
+};
+Reflect.getProperty = function(o,field) {
+	var tmp;
+	if(o == null) return null; else if(o.__properties__ && (tmp = o.__properties__["get_" + field])) return o[tmp](); else return o[field];
+};
+Reflect.setProperty = function(o,field,value) {
+	var tmp;
+	if(o.__properties__ && (tmp = o.__properties__["set_" + field])) o[tmp](value); else o[field] = value;
 };
 Reflect.callMethod = function(o,func,args) {
 	return func.apply(o,args);
@@ -1575,11 +1620,13 @@ var Submarine = function() {
 	this.engineSettingNormal = 0;
 	UnderwaterObject.call(this);
 	this.volume = 1996;
-	this.setMass(748714);
+	this.setMass(1995406);
 	UnderwaterObject.call(this);
 	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/sub.png"));
+	var oldWidth = this.bitmap.get_width();
 	this.bitmap.set_width(67.1 * Constants.pixelsPerMeter);
-	this.bitmap.set_height(6.2 * Constants.pixelsPerMeter);
+	var _g = this.bitmap;
+	_g.set_height(_g.get_height() * (67.1 * Constants.pixelsPerMeter / oldWidth));
 	this.bitmap.set_x(0);
 	this.bitmap.set_y(0);
 	this.addChild(this.bitmap);
@@ -1599,7 +1646,6 @@ Submarine.prototype = $extend(UnderwaterObject.prototype,{
 		if(this.velocity.x < .00001) this.velocity.x = 0;
 		this.location.x += this.velocity.x;
 		this.location.y += this.velocity.y;
-		haxe.Log.trace(this.velocity.x,{ fileName : "Submarine.hx", lineNumber : 46, className : "Submarine", methodName : "update"});
 	}
 	,setEnginePower: function(nPower) {
 		this.engineSettingNormal = nPower;
@@ -1618,26 +1664,50 @@ UIElement.prototype = $extend(openfl.display.Sprite.prototype,{
 		result = new NoUIAction();
 		return result;
 	}
+	,pointIsInRect: function(pX,pY,rect) {
+		return pX >= rect.x && pY >= rect.y && pX <= rect.x + rect.width && pY <= rect.y + rect.height;
+	}
+	,onResize: function(nWidth,nHeight) {
+	}
 	,__class__: UIElement
 });
 var ThrottleControl = function() {
 	UIElement.call(this);
-	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/depthGuage.png"));
-	this.bitmap.set_width(50);
-	this.bitmap.set_height(50);
+	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/throttleControlBackground.png"));
+	this.bitmap.set_width(100);
+	this.bitmap.set_height(this.bitmap.get_width() * 1.61803398875);
 	this.addChild(this.bitmap);
+	this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
+	this.bitmap.set_x(45);
+	this.handle = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/throttleHandle.png"));
+	this.handle.set_width(160);
+	this.handle.set_height(40);
+	this.handle.set_x(this.bitmap.get_x() + this.bitmap.get_width() / 2 - this.handle.get_width() / 2);
+	this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
+	this.addChild(this.handle);
+	var limits1 = this.bitmap.getBounds(this.bitmap.parent);
 };
 $hxClasses["ThrottleControl"] = ThrottleControl;
 ThrottleControl.__name__ = ["ThrottleControl"];
 ThrottleControl.__super__ = UIElement;
 ThrottleControl.prototype = $extend(UIElement.prototype,{
 	onClick: function(mouseX,mouseY) {
-		var result;
-		var nPower;
-		nPower = 1.0 - (js.Boot.__cast(mouseY , Float) - this.get_y()) / this.get_height();
-		haxe.Log.trace("throttle to " + nPower,{ fileName : "ThrottleControl.hx", lineNumber : 20, className : "ThrottleControl", methodName : "onClick"});
-		result = new SetEnginePowerUIAction(nPower);
-		return result;
+		var limits1 = this.bitmap.getBounds(this.bitmap.parent);
+		if(UIElement.prototype.pointIsInRect.call(this,mouseX,mouseY,limits1)) {
+			var result;
+			var nPower;
+			nPower = (js.Boot.__cast(openfl.Lib.current.stage.stageHeight - this.get_height() / 2.0 - mouseY , Float) - this.get_y()) / (this.get_height() / 2.0);
+			motion.Actuate.tween(this.handle,.2,{ x : this.handle.get_x(), y : mouseY - this.handle.get_height() / 2},false).ease(motion.easing.Quad.get_easeOut());
+			haxe.Log.trace("throttle to " + nPower,{ fileName : "ThrottleControl.hx", lineNumber : 46, className : "ThrottleControl", methodName : "onClick"});
+			result = new SetEnginePowerUIAction(nPower);
+			haxe.Log.trace("rect y " + limits1.y,{ fileName : "ThrottleControl.hx", lineNumber : 48, className : "ThrottleControl", methodName : "onClick"});
+			return result;
+		}
+		return new NoUIAction();
+	}
+	,onResize: function(nWidth,nHeight) {
+		this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
+		this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
 	}
 	,__class__: ThrottleControl
 });
@@ -1726,6 +1796,9 @@ UI.__super__ = openfl.display.Sprite;
 UI.prototype = $extend(openfl.display.Sprite.prototype,{
 	getActionFromClick: function(x,y) {
 		return this.throttleControl.onClick(x,y);
+	}
+	,handleResize: function(nWidth,nHeight) {
+		this.throttleControl.onResize(nWidth,nHeight);
 	}
 	,__class__: UI
 });
@@ -2170,6 +2243,34 @@ haxe.ds.ObjectMap.prototype = {
 		this.h[id] = value;
 		this.h.__keys__[id] = key;
 	}
+	,get: function(key) {
+		return this.h[key.__id__];
+	}
+	,exists: function(key) {
+		return this.h.__keys__[key.__id__] != null;
+	}
+	,remove: function(key) {
+		var id = key.__id__;
+		if(this.h.__keys__[id] == null) return false;
+		delete(this.h[id]);
+		delete(this.h.__keys__[id]);
+		return true;
+	}
+	,keys: function() {
+		var a = [];
+		for( var key in this.h.__keys__ ) {
+		if(this.h.hasOwnProperty(key)) a.push(this.h.__keys__[key]);
+		}
+		return HxOverrides.iter(a);
+	}
+	,iterator: function() {
+		return { ref : this.h, it : this.keys(), hasNext : function() {
+			return this.it.hasNext();
+		}, next : function() {
+			var i = this.it.next();
+			return this.ref[i.__id__];
+		}};
+	}
 	,__class__: haxe.ds.ObjectMap
 };
 haxe.ds.StringMap = function() {
@@ -2497,6 +2598,1099 @@ js.Boot.__instanceof = function(o,cl) {
 };
 js.Boot.__cast = function(o,t) {
 	if(js.Boot.__instanceof(o,t)) return o; else throw "Cannot cast " + Std.string(o) + " to " + Std.string(t);
+};
+var motion = {};
+motion.actuators = {};
+motion.actuators.IGenericActuator = function() { };
+$hxClasses["motion.actuators.IGenericActuator"] = motion.actuators.IGenericActuator;
+motion.actuators.IGenericActuator.__name__ = ["motion","actuators","IGenericActuator"];
+motion.actuators.IGenericActuator.prototype = {
+	__class__: motion.actuators.IGenericActuator
+};
+motion.actuators.GenericActuator = function(target,duration,properties) {
+	this._autoVisible = true;
+	this._delay = 0;
+	this._reflect = false;
+	this._repeat = 0;
+	this._reverse = false;
+	this._smartRotation = false;
+	this._snapping = false;
+	this.special = false;
+	this.target = target;
+	this.properties = properties;
+	this.duration = duration;
+	this._ease = motion.Actuate.defaultEase;
+};
+$hxClasses["motion.actuators.GenericActuator"] = motion.actuators.GenericActuator;
+motion.actuators.GenericActuator.__name__ = ["motion","actuators","GenericActuator"];
+motion.actuators.GenericActuator.__interfaces__ = [motion.actuators.IGenericActuator];
+motion.actuators.GenericActuator.prototype = {
+	apply: function() {
+		var _g = 0;
+		var _g1 = Reflect.fields(this.properties);
+		while(_g < _g1.length) {
+			var i = _g1[_g];
+			++_g;
+			if(Object.prototype.hasOwnProperty.call(this.target,i)) Reflect.setField(this.target,i,Reflect.field(this.properties,i)); else Reflect.setProperty(this.target,i,Reflect.field(this.properties,i));
+		}
+	}
+	,autoVisible: function(value) {
+		if(value == null) value = true;
+		this._autoVisible = value;
+		return this;
+	}
+	,callMethod: function(method,params) {
+		if(params == null) params = [];
+		return method.apply(method,params);
+	}
+	,change: function() {
+		if(this._onUpdate != null) this.callMethod(this._onUpdate,this._onUpdateParams);
+	}
+	,complete: function(sendEvent) {
+		if(sendEvent == null) sendEvent = true;
+		if(sendEvent) {
+			this.change();
+			if(this._onComplete != null) this.callMethod(this._onComplete,this._onCompleteParams);
+		}
+		motion.Actuate.unload(this);
+	}
+	,delay: function(duration) {
+		this._delay = duration;
+		return this;
+	}
+	,ease: function(easing) {
+		this._ease = easing;
+		return this;
+	}
+	,move: function() {
+	}
+	,onComplete: function(handler,parameters) {
+		this._onComplete = handler;
+		if(parameters == null) this._onCompleteParams = []; else this._onCompleteParams = parameters;
+		if(this.duration == 0) this.complete();
+		return this;
+	}
+	,onRepeat: function(handler,parameters) {
+		this._onRepeat = handler;
+		if(parameters == null) this._onRepeatParams = []; else this._onRepeatParams = parameters;
+		return this;
+	}
+	,onUpdate: function(handler,parameters) {
+		this._onUpdate = handler;
+		if(parameters == null) this._onUpdateParams = []; else this._onUpdateParams = parameters;
+		return this;
+	}
+	,pause: function() {
+	}
+	,reflect: function(value) {
+		if(value == null) value = true;
+		this._reflect = value;
+		this.special = true;
+		return this;
+	}
+	,repeat: function(times) {
+		if(times == null) times = -1;
+		this._repeat = times;
+		return this;
+	}
+	,resume: function() {
+	}
+	,reverse: function(value) {
+		if(value == null) value = true;
+		this._reverse = value;
+		this.special = true;
+		return this;
+	}
+	,smartRotation: function(value) {
+		if(value == null) value = true;
+		this._smartRotation = value;
+		this.special = true;
+		return this;
+	}
+	,snapping: function(value) {
+		if(value == null) value = true;
+		this._snapping = value;
+		this.special = true;
+		return this;
+	}
+	,stop: function(properties,complete,sendEvent) {
+	}
+	,__class__: motion.actuators.GenericActuator
+};
+motion.actuators.SimpleActuator = function(target,duration,properties) {
+	this.active = true;
+	this.propertyDetails = new Array();
+	this.sendChange = false;
+	this.paused = false;
+	this.cacheVisible = false;
+	this.initialized = false;
+	this.setVisible = false;
+	this.toggleVisible = false;
+	this.startTime = openfl.Lib.getTimer() / 1000;
+	motion.actuators.GenericActuator.call(this,target,duration,properties);
+	if(!motion.actuators.SimpleActuator.addedEvent) {
+		motion.actuators.SimpleActuator.addedEvent = true;
+		openfl.Lib.current.stage.addEventListener(openfl.events.Event.ENTER_FRAME,motion.actuators.SimpleActuator.stage_onEnterFrame);
+	}
+};
+$hxClasses["motion.actuators.SimpleActuator"] = motion.actuators.SimpleActuator;
+motion.actuators.SimpleActuator.__name__ = ["motion","actuators","SimpleActuator"];
+motion.actuators.SimpleActuator.stage_onEnterFrame = function(event) {
+	var currentTime = openfl.Lib.getTimer() / 1000;
+	var actuator;
+	var j = 0;
+	var cleanup = false;
+	var _g1 = 0;
+	var _g = motion.actuators.SimpleActuator.actuatorsLength;
+	while(_g1 < _g) {
+		var i = _g1++;
+		actuator = motion.actuators.SimpleActuator.actuators[j];
+		if(actuator != null && actuator.active) {
+			if(currentTime > actuator.timeOffset) actuator.update(currentTime);
+			j++;
+		} else {
+			motion.actuators.SimpleActuator.actuators.splice(j,1);
+			--motion.actuators.SimpleActuator.actuatorsLength;
+		}
+	}
+};
+motion.actuators.SimpleActuator.__super__ = motion.actuators.GenericActuator;
+motion.actuators.SimpleActuator.prototype = $extend(motion.actuators.GenericActuator.prototype,{
+	autoVisible: function(value) {
+		if(value == null) value = true;
+		this._autoVisible = value;
+		if(!value) {
+			this.toggleVisible = false;
+			if(this.setVisible) this.setField(this.target,"visible",this.cacheVisible);
+		}
+		return this;
+	}
+	,delay: function(duration) {
+		this._delay = duration;
+		this.timeOffset = this.startTime + duration;
+		return this;
+	}
+	,getField: function(target,propertyName) {
+		var value = null;
+		if(Object.prototype.hasOwnProperty.call(target,propertyName)) value = Reflect.field(target,propertyName); else value = Reflect.getProperty(target,propertyName);
+		return value;
+	}
+	,initialize: function() {
+		var details;
+		var start;
+		var _g = 0;
+		var _g1 = Reflect.fields(this.properties);
+		while(_g < _g1.length) {
+			var i = _g1[_g];
+			++_g;
+			var isField = true;
+			if(Object.prototype.hasOwnProperty.call(this.target,i) && (!this.target.__properties__ || !this.target.__properties__["set_" + i])) start = Reflect.field(this.target,i); else {
+				isField = false;
+				start = Reflect.getProperty(this.target,i);
+			}
+			if(typeof(start) == "number") {
+				details = new motion.actuators.PropertyDetails(this.target,i,start,this.getField(this.properties,i) - start,isField);
+				this.propertyDetails.push(details);
+			}
+		}
+		this.detailsLength = this.propertyDetails.length;
+		this.initialized = true;
+	}
+	,move: function() {
+		this.toggleVisible = Object.prototype.hasOwnProperty.call(this.properties,"alpha") && js.Boot.__instanceof(this.target,openfl.display.DisplayObject);
+		if(this.toggleVisible && this.properties.alpha != 0 && !this.getField(this.target,"visible")) {
+			this.setVisible = true;
+			this.cacheVisible = this.getField(this.target,"visible");
+			this.setField(this.target,"visible",true);
+		}
+		this.timeOffset = this.startTime;
+		motion.actuators.SimpleActuator.actuators.push(this);
+		++motion.actuators.SimpleActuator.actuatorsLength;
+	}
+	,onUpdate: function(handler,parameters) {
+		this._onUpdate = handler;
+		if(parameters == null) this._onUpdateParams = []; else this._onUpdateParams = parameters;
+		this.sendChange = true;
+		return this;
+	}
+	,pause: function() {
+		this.paused = true;
+		this.pauseTime = openfl.Lib.getTimer();
+	}
+	,resume: function() {
+		if(this.paused) {
+			this.paused = false;
+			this.timeOffset += (openfl.Lib.getTimer() - this.pauseTime) / 1000;
+		}
+	}
+	,setField: function(target,propertyName,value) {
+		if(Object.prototype.hasOwnProperty.call(target,propertyName)) target[propertyName] = value; else Reflect.setProperty(target,propertyName,value);
+	}
+	,setProperty: function(details,value) {
+		if(details.isField) details.target[details.propertyName] = value; else Reflect.setProperty(details.target,details.propertyName,value);
+	}
+	,stop: function(properties,complete,sendEvent) {
+		if(this.active) {
+			if(properties == null) {
+				this.active = false;
+				if(complete) this.apply();
+				this.complete(sendEvent);
+				return;
+			}
+			var _g = 0;
+			var _g1 = Reflect.fields(properties);
+			while(_g < _g1.length) {
+				var i = _g1[_g];
+				++_g;
+				if(Object.prototype.hasOwnProperty.call(this.properties,i)) {
+					this.active = false;
+					if(complete) this.apply();
+					this.complete(sendEvent);
+					return;
+				}
+			}
+		}
+	}
+	,update: function(currentTime) {
+		if(!this.paused) {
+			var details;
+			var easing;
+			var i;
+			var tweenPosition = (currentTime - this.timeOffset) / this.duration;
+			if(tweenPosition > 1) tweenPosition = 1;
+			if(!this.initialized) this.initialize();
+			if(!this.special) {
+				easing = this._ease.calculate(tweenPosition);
+				var _g1 = 0;
+				var _g = this.detailsLength;
+				while(_g1 < _g) {
+					var i1 = _g1++;
+					details = this.propertyDetails[i1];
+					this.setProperty(details,details.start + details.change * easing);
+				}
+			} else {
+				if(!this._reverse) easing = this._ease.calculate(tweenPosition); else easing = this._ease.calculate(1 - tweenPosition);
+				var endValue;
+				var _g11 = 0;
+				var _g2 = this.detailsLength;
+				while(_g11 < _g2) {
+					var i2 = _g11++;
+					details = this.propertyDetails[i2];
+					if(this._smartRotation && (details.propertyName == "rotation" || details.propertyName == "rotationX" || details.propertyName == "rotationY" || details.propertyName == "rotationZ")) {
+						var rotation = details.change % 360;
+						if(rotation > 180) rotation -= 360; else if(rotation < -180) rotation += 360;
+						endValue = details.start + rotation * easing;
+					} else endValue = details.start + details.change * easing;
+					if(!this._snapping) {
+						if(details.isField) details.target[details.propertyName] = endValue; else Reflect.setProperty(details.target,details.propertyName,endValue);
+					} else this.setProperty(details,Math.round(endValue));
+				}
+			}
+			if(tweenPosition == 1) {
+				if(this._repeat == 0) {
+					this.active = false;
+					if(this.toggleVisible && this.getField(this.target,"alpha") == 0) this.setField(this.target,"visible",false);
+					this.complete(true);
+					return;
+				} else {
+					if(this._onRepeat != null) this.callMethod(this._onRepeat,this._onRepeatParams);
+					if(this._reflect) this._reverse = !this._reverse;
+					this.startTime = currentTime;
+					this.timeOffset = this.startTime + this._delay;
+					if(this._repeat > 0) this._repeat--;
+				}
+			}
+			if(this.sendChange) this.change();
+		}
+	}
+	,__class__: motion.actuators.SimpleActuator
+});
+motion.easing = {};
+motion.easing.Expo = function() { };
+$hxClasses["motion.easing.Expo"] = motion.easing.Expo;
+motion.easing.Expo.__name__ = ["motion","easing","Expo"];
+motion.easing.Expo.__properties__ = {get_easeOut:"get_easeOut",get_easeInOut:"get_easeInOut",get_easeIn:"get_easeIn"}
+motion.easing.Expo.get_easeIn = function() {
+	return new motion.easing.ExpoEaseIn();
+};
+motion.easing.Expo.get_easeInOut = function() {
+	return new motion.easing.ExpoEaseInOut();
+};
+motion.easing.Expo.get_easeOut = function() {
+	return new motion.easing.ExpoEaseOut();
+};
+motion.easing.IEasing = function() { };
+$hxClasses["motion.easing.IEasing"] = motion.easing.IEasing;
+motion.easing.IEasing.__name__ = ["motion","easing","IEasing"];
+motion.easing.IEasing.prototype = {
+	__class__: motion.easing.IEasing
+};
+motion.easing.ExpoEaseOut = function() {
+};
+$hxClasses["motion.easing.ExpoEaseOut"] = motion.easing.ExpoEaseOut;
+motion.easing.ExpoEaseOut.__name__ = ["motion","easing","ExpoEaseOut"];
+motion.easing.ExpoEaseOut.__interfaces__ = [motion.easing.IEasing];
+motion.easing.ExpoEaseOut.prototype = {
+	calculate: function(k) {
+		if(k == 1) return 1; else return 1 - Math.pow(2,-10 * k);
+	}
+	,ease: function(t,b,c,d) {
+		if(t == d) return b + c; else return c * (1 - Math.pow(2,-10 * t / d)) + b;
+	}
+	,__class__: motion.easing.ExpoEaseOut
+};
+motion.Actuate = function() { };
+$hxClasses["motion.Actuate"] = motion.Actuate;
+motion.Actuate.__name__ = ["motion","Actuate"];
+motion.Actuate.apply = function(target,properties,customActuator) {
+	motion.Actuate.stop(target,properties);
+	if(customActuator == null) customActuator = motion.Actuate.defaultActuator;
+	var actuator = Type.createInstance(customActuator,[target,0,properties]);
+	actuator.apply();
+	return actuator;
+};
+motion.Actuate.effects = function(target,duration,overwrite) {
+	if(overwrite == null) overwrite = true;
+	return new motion._Actuate.EffectsOptions(target,duration,overwrite);
+};
+motion.Actuate.getLibrary = function(target,allowCreation) {
+	if(allowCreation == null) allowCreation = true;
+	if(!motion.Actuate.targetLibraries.exists(target) && allowCreation) motion.Actuate.targetLibraries.set(target,new Array());
+	return motion.Actuate.targetLibraries.get(target);
+};
+motion.Actuate.motionPath = function(target,duration,properties,overwrite) {
+	if(overwrite == null) overwrite = true;
+	return motion.Actuate.tween(target,duration,properties,overwrite,motion.actuators.MotionPathActuator);
+};
+motion.Actuate.pause = function(target) {
+	if(js.Boot.__instanceof(target,motion.actuators.GenericActuator)) (js.Boot.__cast(target , motion.actuators.GenericActuator)).pause(); else {
+		var library = motion.Actuate.getLibrary(target,false);
+		if(library != null) {
+			var _g = 0;
+			while(_g < library.length) {
+				var actuator = library[_g];
+				++_g;
+				actuator.pause();
+			}
+		}
+	}
+};
+motion.Actuate.pauseAll = function() {
+	var $it0 = motion.Actuate.targetLibraries.iterator();
+	while( $it0.hasNext() ) {
+		var library = $it0.next();
+		var _g = 0;
+		while(_g < library.length) {
+			var actuator = library[_g];
+			++_g;
+			actuator.pause();
+		}
+	}
+};
+motion.Actuate.reset = function() {
+	var $it0 = motion.Actuate.targetLibraries.iterator();
+	while( $it0.hasNext() ) {
+		var library = $it0.next();
+		var i = library.length - 1;
+		while(i >= 0) {
+			library[i].stop(null,false,false);
+			i--;
+		}
+	}
+	motion.Actuate.targetLibraries = new haxe.ds.ObjectMap();
+};
+motion.Actuate.resume = function(target) {
+	if(js.Boot.__instanceof(target,motion.actuators.GenericActuator)) (js.Boot.__cast(target , motion.actuators.GenericActuator)).resume(); else {
+		var library = motion.Actuate.getLibrary(target,false);
+		if(library != null) {
+			var _g = 0;
+			while(_g < library.length) {
+				var actuator = library[_g];
+				++_g;
+				actuator.resume();
+			}
+		}
+	}
+};
+motion.Actuate.resumeAll = function() {
+	var $it0 = motion.Actuate.targetLibraries.iterator();
+	while( $it0.hasNext() ) {
+		var library = $it0.next();
+		var _g = 0;
+		while(_g < library.length) {
+			var actuator = library[_g];
+			++_g;
+			actuator.resume();
+		}
+	}
+};
+motion.Actuate.stop = function(target,properties,complete,sendEvent) {
+	if(sendEvent == null) sendEvent = true;
+	if(complete == null) complete = false;
+	if(target != null) {
+		if(js.Boot.__instanceof(target,motion.actuators.GenericActuator)) (js.Boot.__cast(target , motion.actuators.GenericActuator)).stop(null,complete,sendEvent); else {
+			var library = motion.Actuate.getLibrary(target,false);
+			if(library != null) {
+				if(typeof(properties) == "string") {
+					var temp = { };
+					Reflect.setField(temp,properties,null);
+					properties = temp;
+				} else if((properties instanceof Array) && properties.__enum__ == null) {
+					var temp1 = { };
+					var _g = 0;
+					var _g1;
+					_g1 = js.Boot.__cast(properties , Array);
+					while(_g < _g1.length) {
+						var property = _g1[_g];
+						++_g;
+						Reflect.setField(temp1,property,null);
+					}
+					properties = temp1;
+				}
+				var i = library.length - 1;
+				while(i >= 0) {
+					library[i].stop(properties,complete,sendEvent);
+					i--;
+				}
+			}
+		}
+	}
+};
+motion.Actuate.timer = function(duration,customActuator) {
+	return motion.Actuate.tween(new motion._Actuate.TweenTimer(0),duration,new motion._Actuate.TweenTimer(1),false,customActuator);
+};
+motion.Actuate.transform = function(target,duration,overwrite) {
+	if(overwrite == null) overwrite = true;
+	if(duration == null) duration = 0;
+	return new motion._Actuate.TransformOptions(target,duration,overwrite);
+};
+motion.Actuate.tween = function(target,duration,properties,overwrite,customActuator) {
+	if(overwrite == null) overwrite = true;
+	if(target != null) {
+		if(duration > 0) {
+			if(customActuator == null) customActuator = motion.Actuate.defaultActuator;
+			var actuator = Type.createInstance(customActuator,[target,duration,properties]);
+			var library = motion.Actuate.getLibrary(actuator.target);
+			if(overwrite) {
+				var i = library.length - 1;
+				while(i >= 0) {
+					library[i].stop(actuator.properties,false,false);
+					i--;
+				}
+				library = motion.Actuate.getLibrary(actuator.target);
+			}
+			library.push(actuator);
+			actuator.move();
+			return actuator;
+		} else return motion.Actuate.apply(target,properties,customActuator);
+	}
+	return null;
+};
+motion.Actuate.unload = function(actuator) {
+	var target = actuator.target;
+	if(motion.Actuate.targetLibraries.h.__keys__[target.__id__] != null) {
+		HxOverrides.remove(motion.Actuate.targetLibraries.h[target.__id__],actuator);
+		if(motion.Actuate.targetLibraries.h[target.__id__].length == 0) motion.Actuate.targetLibraries.remove(target);
+	}
+};
+motion.Actuate.update = function(target,duration,start,end,overwrite) {
+	if(overwrite == null) overwrite = true;
+	var properties = { start : start, end : end};
+	return motion.Actuate.tween(target,duration,properties,overwrite,motion.actuators.MethodActuator);
+};
+motion._Actuate = {};
+motion._Actuate.EffectsOptions = function(target,duration,overwrite) {
+	this.target = target;
+	this.duration = duration;
+	this.overwrite = overwrite;
+};
+$hxClasses["motion._Actuate.EffectsOptions"] = motion._Actuate.EffectsOptions;
+motion._Actuate.EffectsOptions.__name__ = ["motion","_Actuate","EffectsOptions"];
+motion._Actuate.EffectsOptions.prototype = {
+	filter: function(reference,properties) {
+		properties.filter = reference;
+		return motion.Actuate.tween(this.target,this.duration,properties,this.overwrite,motion.actuators.FilterActuator);
+	}
+	,__class__: motion._Actuate.EffectsOptions
+};
+motion._Actuate.TransformOptions = function(target,duration,overwrite) {
+	this.target = target;
+	this.duration = duration;
+	this.overwrite = overwrite;
+};
+$hxClasses["motion._Actuate.TransformOptions"] = motion._Actuate.TransformOptions;
+motion._Actuate.TransformOptions.__name__ = ["motion","_Actuate","TransformOptions"];
+motion._Actuate.TransformOptions.prototype = {
+	color: function(value,strength,alpha) {
+		if(strength == null) strength = 1;
+		if(value == null) value = 0;
+		var properties = { colorValue : value, colorStrength : strength};
+		if(alpha != null) properties.colorAlpha = alpha;
+		return motion.Actuate.tween(this.target,this.duration,properties,this.overwrite,motion.actuators.TransformActuator);
+	}
+	,sound: function(volume,pan) {
+		var properties = { };
+		if(volume != null) properties.soundVolume = volume;
+		if(pan != null) properties.soundPan = pan;
+		return motion.Actuate.tween(this.target,this.duration,properties,this.overwrite,motion.actuators.TransformActuator);
+	}
+	,__class__: motion._Actuate.TransformOptions
+};
+motion._Actuate.TweenTimer = function(progress) {
+	this.progress = progress;
+};
+$hxClasses["motion._Actuate.TweenTimer"] = motion._Actuate.TweenTimer;
+motion._Actuate.TweenTimer.__name__ = ["motion","_Actuate","TweenTimer"];
+motion._Actuate.TweenTimer.prototype = {
+	__class__: motion._Actuate.TweenTimer
+};
+motion.MotionPath = function() {
+	this._x = new motion.ComponentPath();
+	this._y = new motion.ComponentPath();
+	this._rotation = null;
+};
+$hxClasses["motion.MotionPath"] = motion.MotionPath;
+motion.MotionPath.__name__ = ["motion","MotionPath"];
+motion.MotionPath.prototype = {
+	bezier: function(x,y,controlX,controlY,strength) {
+		if(strength == null) strength = 1;
+		this._x.addPath(new motion.BezierPath(x,controlX,strength));
+		this._y.addPath(new motion.BezierPath(y,controlY,strength));
+		return this;
+	}
+	,line: function(x,y,strength) {
+		if(strength == null) strength = 1;
+		this._x.addPath(new motion.LinearPath(x,strength));
+		this._y.addPath(new motion.LinearPath(y,strength));
+		return this;
+	}
+	,get_rotation: function() {
+		if(this._rotation == null) this._rotation = new motion.RotationPath(this._x,this._y);
+		return this._rotation;
+	}
+	,get_x: function() {
+		return this._x;
+	}
+	,get_y: function() {
+		return this._y;
+	}
+	,__class__: motion.MotionPath
+	,__properties__: {get_y:"get_y",get_x:"get_x",get_rotation:"get_rotation"}
+};
+motion.IComponentPath = function() { };
+$hxClasses["motion.IComponentPath"] = motion.IComponentPath;
+motion.IComponentPath.__name__ = ["motion","IComponentPath"];
+motion.IComponentPath.prototype = {
+	__class__: motion.IComponentPath
+};
+motion.ComponentPath = function() {
+	this.paths = new Array();
+	this.start = 0;
+	this.totalStrength = 0;
+};
+$hxClasses["motion.ComponentPath"] = motion.ComponentPath;
+motion.ComponentPath.__name__ = ["motion","ComponentPath"];
+motion.ComponentPath.__interfaces__ = [motion.IComponentPath];
+motion.ComponentPath.prototype = {
+	addPath: function(path) {
+		this.paths.push(path);
+		this.totalStrength += path.strength;
+	}
+	,calculate: function(k) {
+		if(this.paths.length == 1) return this.paths[0].calculate(this.start,k); else {
+			var ratio = k * this.totalStrength;
+			var lastEnd = this.start;
+			var _g = 0;
+			var _g1 = this.paths;
+			while(_g < _g1.length) {
+				var path = _g1[_g];
+				++_g;
+				if(ratio > path.strength) {
+					ratio -= path.strength;
+					lastEnd = path.end;
+				} else return path.calculate(lastEnd,ratio / path.strength);
+			}
+		}
+		return 0;
+	}
+	,get_end: function() {
+		if(this.paths.length > 0) {
+			var path = this.paths[this.paths.length - 1];
+			return path.end;
+		} else return this.start;
+	}
+	,__class__: motion.ComponentPath
+	,__properties__: {get_end:"get_end"}
+};
+motion.BezierPath = function(end,control,strength) {
+	this.end = end;
+	this.control = control;
+	this.strength = strength;
+};
+$hxClasses["motion.BezierPath"] = motion.BezierPath;
+motion.BezierPath.__name__ = ["motion","BezierPath"];
+motion.BezierPath.prototype = {
+	calculate: function(start,k) {
+		return (1 - k) * (1 - k) * start + 2 * (1 - k) * k * this.control + k * k * this.end;
+	}
+	,__class__: motion.BezierPath
+};
+motion.LinearPath = function(end,strength) {
+	motion.BezierPath.call(this,end,0,strength);
+};
+$hxClasses["motion.LinearPath"] = motion.LinearPath;
+motion.LinearPath.__name__ = ["motion","LinearPath"];
+motion.LinearPath.__super__ = motion.BezierPath;
+motion.LinearPath.prototype = $extend(motion.BezierPath.prototype,{
+	calculate: function(start,k) {
+		return start + k * (this.end - start);
+	}
+	,__class__: motion.LinearPath
+});
+motion.RotationPath = function(x,y) {
+	this.step = 0.01;
+	this._x = x;
+	this._y = y;
+	this.offset = 0;
+	this.start = this.calculate(0.0);
+};
+$hxClasses["motion.RotationPath"] = motion.RotationPath;
+motion.RotationPath.__name__ = ["motion","RotationPath"];
+motion.RotationPath.__interfaces__ = [motion.IComponentPath];
+motion.RotationPath.prototype = {
+	calculate: function(k) {
+		var dX = this._x.calculate(k) - this._x.calculate(k + this.step);
+		var dY = this._y.calculate(k) - this._y.calculate(k + this.step);
+		var angle = Math.atan2(dY,dX) * (180 / Math.PI);
+		angle = (angle + this.offset) % 360;
+		return angle;
+	}
+	,get_end: function() {
+		return this.calculate(1.0);
+	}
+	,__class__: motion.RotationPath
+	,__properties__: {get_end:"get_end"}
+};
+motion.actuators.FilterActuator = function(target,duration,properties) {
+	this.filterIndex = -1;
+	motion.actuators.SimpleActuator.call(this,target,duration,properties);
+	if(js.Boot.__instanceof(properties.filter,Class)) {
+		this.filterClass = properties.filter;
+		var _g = 0;
+		var _g1 = (js.Boot.__cast(target , openfl.display.DisplayObject)).get_filters();
+		while(_g < _g1.length) {
+			var filter = _g1[_g];
+			++_g;
+			if(js.Boot.__instanceof(filter,this.filterClass)) this.filter = filter;
+		}
+	} else {
+		this.filterIndex = properties.filter;
+		this.filter = (js.Boot.__cast(target , openfl.display.DisplayObject)).get_filters()[this.filterIndex];
+	}
+};
+$hxClasses["motion.actuators.FilterActuator"] = motion.actuators.FilterActuator;
+motion.actuators.FilterActuator.__name__ = ["motion","actuators","FilterActuator"];
+motion.actuators.FilterActuator.__super__ = motion.actuators.SimpleActuator;
+motion.actuators.FilterActuator.prototype = $extend(motion.actuators.SimpleActuator.prototype,{
+	apply: function() {
+		var _g = 0;
+		var _g1 = Reflect.fields(this.properties);
+		while(_g < _g1.length) {
+			var propertyName = _g1[_g];
+			++_g;
+			if(propertyName != "filter") Reflect.setField(this.filter,propertyName,Reflect.field(this.properties,propertyName));
+		}
+		var filters = this.getField(this.target,"filters");
+		Reflect.setField(filters,this.properties.filter,this.filter);
+		this.setField(this.target,"filters",filters);
+	}
+	,initialize: function() {
+		var details;
+		var start;
+		var _g = 0;
+		var _g1 = Reflect.fields(this.properties);
+		while(_g < _g1.length) {
+			var propertyName = _g1[_g];
+			++_g;
+			if(propertyName != "filter") {
+				start = this.getField(this.filter,propertyName);
+				details = new motion.actuators.PropertyDetails(this.filter,propertyName,start,Reflect.field(this.properties,propertyName) - start);
+				this.propertyDetails.push(details);
+			}
+		}
+		this.detailsLength = this.propertyDetails.length;
+		this.initialized = true;
+	}
+	,update: function(currentTime) {
+		motion.actuators.SimpleActuator.prototype.update.call(this,currentTime);
+		var filters = (js.Boot.__cast(this.target , openfl.display.DisplayObject)).get_filters();
+		if(this.filterIndex > -1) Reflect.setField(filters,this.properties.filter,this.filter); else {
+			var _g1 = 0;
+			var _g = filters.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				if(js.Boot.__instanceof(filters[i],this.filterClass)) filters[i] = this.filter;
+			}
+		}
+		this.setField(this.target,"filters",filters);
+	}
+	,__class__: motion.actuators.FilterActuator
+});
+motion.actuators.MethodActuator = function(target,duration,properties) {
+	this.currentParameters = new Array();
+	this.tweenProperties = { };
+	motion.actuators.SimpleActuator.call(this,target,duration,properties);
+	if(!Object.prototype.hasOwnProperty.call(properties,"start")) this.properties.start = new Array();
+	if(!Object.prototype.hasOwnProperty.call(properties,"end")) this.properties.end = this.properties.start;
+	var _g1 = 0;
+	var _g = this.properties.start.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		this.currentParameters.push(null);
+	}
+};
+$hxClasses["motion.actuators.MethodActuator"] = motion.actuators.MethodActuator;
+motion.actuators.MethodActuator.__name__ = ["motion","actuators","MethodActuator"];
+motion.actuators.MethodActuator.__super__ = motion.actuators.SimpleActuator;
+motion.actuators.MethodActuator.prototype = $extend(motion.actuators.SimpleActuator.prototype,{
+	apply: function() {
+		this.callMethod(this.target,this.properties.end);
+	}
+	,complete: function(sendEvent) {
+		if(sendEvent == null) sendEvent = true;
+		var _g1 = 0;
+		var _g = this.properties.start.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.currentParameters[i] = Reflect.field(this.tweenProperties,"param" + i);
+		}
+		this.callMethod(this.target,this.currentParameters);
+		motion.actuators.SimpleActuator.prototype.complete.call(this,sendEvent);
+	}
+	,initialize: function() {
+		var details;
+		var propertyName;
+		var start;
+		var _g1 = 0;
+		var _g = this.properties.start.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			propertyName = "param" + i;
+			start = this.properties.start[i];
+			this.tweenProperties[propertyName] = start;
+			if(typeof(start) == "number" || ((start | 0) === start)) {
+				details = new motion.actuators.PropertyDetails(this.tweenProperties,propertyName,start,this.properties.end[i] - start);
+				this.propertyDetails.push(details);
+			}
+		}
+		this.detailsLength = this.propertyDetails.length;
+		this.initialized = true;
+	}
+	,update: function(currentTime) {
+		motion.actuators.SimpleActuator.prototype.update.call(this,currentTime);
+		if(this.active) {
+			var _g1 = 0;
+			var _g = this.properties.start.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				this.currentParameters[i] = Reflect.field(this.tweenProperties,"param" + i);
+			}
+			this.callMethod(this.target,this.currentParameters);
+		}
+	}
+	,__class__: motion.actuators.MethodActuator
+});
+motion.actuators.MotionPathActuator = function(target,duration,properties) {
+	motion.actuators.SimpleActuator.call(this,target,duration,properties);
+};
+$hxClasses["motion.actuators.MotionPathActuator"] = motion.actuators.MotionPathActuator;
+motion.actuators.MotionPathActuator.__name__ = ["motion","actuators","MotionPathActuator"];
+motion.actuators.MotionPathActuator.__super__ = motion.actuators.SimpleActuator;
+motion.actuators.MotionPathActuator.prototype = $extend(motion.actuators.SimpleActuator.prototype,{
+	apply: function() {
+		var _g = 0;
+		var _g1 = Reflect.fields(this.properties);
+		while(_g < _g1.length) {
+			var propertyName = _g1[_g];
+			++_g;
+			if(Object.prototype.hasOwnProperty.call(this.target,propertyName)) Reflect.setField(this.target,propertyName,(js.Boot.__cast(Reflect.field(this.properties,propertyName) , motion.IComponentPath)).get_end()); else Reflect.setProperty(this.target,propertyName,(js.Boot.__cast(Reflect.field(this.properties,propertyName) , motion.IComponentPath)).get_end());
+		}
+	}
+	,initialize: function() {
+		var details;
+		var path;
+		var _g = 0;
+		var _g1 = Reflect.fields(this.properties);
+		while(_g < _g1.length) {
+			var propertyName = _g1[_g];
+			++_g;
+			path = js.Boot.__cast(Reflect.field(this.properties,propertyName) , motion.IComponentPath);
+			if(path != null) {
+				var isField = true;
+				if(Object.prototype.hasOwnProperty.call(this.target,propertyName)) path.start = Reflect.field(this.target,propertyName); else {
+					isField = false;
+					path.start = Reflect.getProperty(this.target,propertyName);
+				}
+				details = new motion.actuators.PropertyPathDetails(this.target,propertyName,path,isField);
+				this.propertyDetails.push(details);
+			}
+		}
+		this.detailsLength = this.propertyDetails.length;
+		this.initialized = true;
+	}
+	,update: function(currentTime) {
+		if(!this.paused) {
+			var details;
+			var easing;
+			var tweenPosition = (currentTime - this.timeOffset) / this.duration;
+			if(tweenPosition > 1) tweenPosition = 1;
+			if(!this.initialized) this.initialize();
+			if(!this.special) {
+				easing = this._ease.calculate(tweenPosition);
+				var _g = 0;
+				var _g1 = this.propertyDetails;
+				while(_g < _g1.length) {
+					var details1 = _g1[_g];
+					++_g;
+					if(details1.isField) Reflect.setField(details1.target,details1.propertyName,(js.Boot.__cast(details1 , motion.actuators.PropertyPathDetails)).path.calculate(easing)); else Reflect.setProperty(details1.target,details1.propertyName,(js.Boot.__cast(details1 , motion.actuators.PropertyPathDetails)).path.calculate(easing));
+				}
+			} else {
+				if(!this._reverse) easing = this._ease.calculate(tweenPosition); else easing = this._ease.calculate(1 - tweenPosition);
+				var endValue;
+				var _g2 = 0;
+				var _g11 = this.propertyDetails;
+				while(_g2 < _g11.length) {
+					var details2 = _g11[_g2];
+					++_g2;
+					if(!this._snapping) {
+						if(details2.isField) Reflect.setField(details2.target,details2.propertyName,(js.Boot.__cast(details2 , motion.actuators.PropertyPathDetails)).path.calculate(easing)); else Reflect.setProperty(details2.target,details2.propertyName,(js.Boot.__cast(details2 , motion.actuators.PropertyPathDetails)).path.calculate(easing));
+					} else if(details2.isField) Reflect.setField(details2.target,details2.propertyName,Math.round((js.Boot.__cast(details2 , motion.actuators.PropertyPathDetails)).path.calculate(easing))); else Reflect.setProperty(details2.target,details2.propertyName,Math.round((js.Boot.__cast(details2 , motion.actuators.PropertyPathDetails)).path.calculate(easing)));
+				}
+			}
+			if(tweenPosition == 1) {
+				if(this._repeat == 0) {
+					this.active = false;
+					if(this.toggleVisible && this.getField(this.target,"alpha") == 0) this.setField(this.target,"visible",false);
+					this.complete(true);
+					return;
+				} else {
+					if(this._reflect) this._reverse = !this._reverse;
+					this.startTime = currentTime;
+					this.timeOffset = this.startTime + this._delay;
+					if(this._repeat > 0) this._repeat--;
+				}
+			}
+			if(this.sendChange) this.change();
+		}
+	}
+	,__class__: motion.actuators.MotionPathActuator
+});
+motion.actuators.PropertyDetails = function(target,propertyName,start,change,isField) {
+	if(isField == null) isField = true;
+	this.target = target;
+	this.propertyName = propertyName;
+	this.start = start;
+	this.change = change;
+	this.isField = isField;
+};
+$hxClasses["motion.actuators.PropertyDetails"] = motion.actuators.PropertyDetails;
+motion.actuators.PropertyDetails.__name__ = ["motion","actuators","PropertyDetails"];
+motion.actuators.PropertyDetails.prototype = {
+	__class__: motion.actuators.PropertyDetails
+};
+motion.actuators.PropertyPathDetails = function(target,propertyName,path,isField) {
+	if(isField == null) isField = true;
+	motion.actuators.PropertyDetails.call(this,target,propertyName,0,0,isField);
+	this.path = path;
+};
+$hxClasses["motion.actuators.PropertyPathDetails"] = motion.actuators.PropertyPathDetails;
+motion.actuators.PropertyPathDetails.__name__ = ["motion","actuators","PropertyPathDetails"];
+motion.actuators.PropertyPathDetails.__super__ = motion.actuators.PropertyDetails;
+motion.actuators.PropertyPathDetails.prototype = $extend(motion.actuators.PropertyDetails.prototype,{
+	__class__: motion.actuators.PropertyPathDetails
+});
+motion.actuators.TransformActuator = function(target,duration,properties) {
+	motion.actuators.SimpleActuator.call(this,target,duration,properties);
+};
+$hxClasses["motion.actuators.TransformActuator"] = motion.actuators.TransformActuator;
+motion.actuators.TransformActuator.__name__ = ["motion","actuators","TransformActuator"];
+motion.actuators.TransformActuator.__super__ = motion.actuators.SimpleActuator;
+motion.actuators.TransformActuator.prototype = $extend(motion.actuators.SimpleActuator.prototype,{
+	apply: function() {
+		this.initialize();
+		if(this.endColorTransform != null) {
+			var transform = this.getField(this.target,"transform");
+			this.setField(transform,"colorTransform",this.endColorTransform);
+		}
+		if(this.endSoundTransform != null) this.setField(this.target,"soundTransform",this.endSoundTransform);
+	}
+	,initialize: function() {
+		if(Object.prototype.hasOwnProperty.call(this.properties,"colorValue") && js.Boot.__instanceof(this.target,openfl.display.DisplayObject)) this.initializeColor();
+		if(Object.prototype.hasOwnProperty.call(this.properties,"soundVolume") || Object.prototype.hasOwnProperty.call(this.properties,"soundPan")) this.initializeSound();
+		this.detailsLength = this.propertyDetails.length;
+		this.initialized = true;
+	}
+	,initializeColor: function() {
+		this.endColorTransform = new openfl.geom.ColorTransform();
+		var color = this.properties.colorValue;
+		var strength = this.properties.colorStrength;
+		if(strength < 1) {
+			var multiplier;
+			var offset;
+			if(strength < 0.5) {
+				multiplier = 1;
+				offset = strength * 2;
+			} else {
+				multiplier = 1 - (strength - 0.5) * 2;
+				offset = 1;
+			}
+			this.endColorTransform.redMultiplier = multiplier;
+			this.endColorTransform.greenMultiplier = multiplier;
+			this.endColorTransform.blueMultiplier = multiplier;
+			this.endColorTransform.redOffset = offset * (color >> 16 & 255);
+			this.endColorTransform.greenOffset = offset * (color >> 8 & 255);
+			this.endColorTransform.blueOffset = offset * (color & 255);
+		} else {
+			this.endColorTransform.redMultiplier = 0;
+			this.endColorTransform.greenMultiplier = 0;
+			this.endColorTransform.blueMultiplier = 0;
+			this.endColorTransform.redOffset = color >> 16 & 255;
+			this.endColorTransform.greenOffset = color >> 8 & 255;
+			this.endColorTransform.blueOffset = color & 255;
+		}
+		var propertyNames = ["redMultiplier","greenMultiplier","blueMultiplier","redOffset","greenOffset","blueOffset"];
+		if(Object.prototype.hasOwnProperty.call(this.properties,"colorAlpha")) {
+			this.endColorTransform.alphaMultiplier = this.properties.colorAlpha;
+			propertyNames.push("alphaMultiplier");
+		} else this.endColorTransform.alphaMultiplier = this.getField(this.target,"alpha");
+		var transform = this.getField(this.target,"transform");
+		var begin = this.getField(transform,"colorTransform");
+		this.tweenColorTransform = new openfl.geom.ColorTransform();
+		var details;
+		var start;
+		var _g = 0;
+		while(_g < propertyNames.length) {
+			var propertyName = propertyNames[_g];
+			++_g;
+			start = this.getField(begin,propertyName);
+			details = new motion.actuators.PropertyDetails(this.tweenColorTransform,propertyName,start,this.getField(this.endColorTransform,propertyName) - start);
+			this.propertyDetails.push(details);
+		}
+	}
+	,initializeSound: function() {
+		if(this.getField(this.target,"soundTransform") == null) this.setField(this.target,"soundTransform",new openfl.media.SoundTransform());
+		var start = this.getField(this.target,"soundTransform");
+		this.endSoundTransform = this.getField(this.target,"soundTransform");
+		this.tweenSoundTransform = new openfl.media.SoundTransform();
+		if(Object.prototype.hasOwnProperty.call(this.properties,"soundVolume")) {
+			this.endSoundTransform.volume = this.properties.soundVolume;
+			this.propertyDetails.push(new motion.actuators.PropertyDetails(this.tweenSoundTransform,"volume",start.volume,this.endSoundTransform.volume - start.volume));
+		}
+		if(Object.prototype.hasOwnProperty.call(this.properties,"soundPan")) {
+			this.endSoundTransform.pan = this.properties.soundPan;
+			this.propertyDetails.push(new motion.actuators.PropertyDetails(this.tweenSoundTransform,"pan",start.pan,this.endSoundTransform.pan - start.pan));
+		}
+	}
+	,update: function(currentTime) {
+		motion.actuators.SimpleActuator.prototype.update.call(this,currentTime);
+		if(this.endColorTransform != null) {
+			var transform = this.getField(this.target,"transform");
+			this.setField(transform,"colorTransform",this.tweenColorTransform);
+		}
+		if(this.endSoundTransform != null) this.setField(this.target,"soundTransform",this.tweenSoundTransform);
+	}
+	,__class__: motion.actuators.TransformActuator
+});
+motion.easing.ExpoEaseIn = function() {
+};
+$hxClasses["motion.easing.ExpoEaseIn"] = motion.easing.ExpoEaseIn;
+motion.easing.ExpoEaseIn.__name__ = ["motion","easing","ExpoEaseIn"];
+motion.easing.ExpoEaseIn.__interfaces__ = [motion.easing.IEasing];
+motion.easing.ExpoEaseIn.prototype = {
+	calculate: function(k) {
+		if(k == 0) return 0; else return Math.pow(2,10 * (k - 1));
+	}
+	,ease: function(t,b,c,d) {
+		if(t == 0) return b; else return c * Math.pow(2,10 * (t / d - 1)) + b;
+	}
+	,__class__: motion.easing.ExpoEaseIn
+};
+motion.easing.ExpoEaseInOut = function() {
+};
+$hxClasses["motion.easing.ExpoEaseInOut"] = motion.easing.ExpoEaseInOut;
+motion.easing.ExpoEaseInOut.__name__ = ["motion","easing","ExpoEaseInOut"];
+motion.easing.ExpoEaseInOut.__interfaces__ = [motion.easing.IEasing];
+motion.easing.ExpoEaseInOut.prototype = {
+	calculate: function(k) {
+		if(k == 0) return 0;
+		if(k == 1) return 1;
+		if((k /= 0.5) < 1.0) return 0.5 * Math.pow(2,10 * (k - 1));
+		return 0.5 * (2 - Math.pow(2,-10 * --k));
+	}
+	,ease: function(t,b,c,d) {
+		if(t == 0) return b;
+		if(t == d) return b + c;
+		if((t /= d / 2.0) < 1.0) return c / 2 * Math.pow(2,10 * (t - 1)) + b;
+		return c / 2 * (2 - Math.pow(2,-10 * --t)) + b;
+	}
+	,__class__: motion.easing.ExpoEaseInOut
+};
+motion.easing.Quad = function() { };
+$hxClasses["motion.easing.Quad"] = motion.easing.Quad;
+motion.easing.Quad.__name__ = ["motion","easing","Quad"];
+motion.easing.Quad.__properties__ = {get_easeOut:"get_easeOut",get_easeInOut:"get_easeInOut",get_easeIn:"get_easeIn"}
+motion.easing.Quad.get_easeIn = function() {
+	return new motion.easing.QuadEaseIn();
+};
+motion.easing.Quad.get_easeInOut = function() {
+	return new motion.easing.QuadEaseInOut();
+};
+motion.easing.Quad.get_easeOut = function() {
+	return new motion.easing.QuadEaseOut();
+};
+motion.easing.QuadEaseIn = function() {
+};
+$hxClasses["motion.easing.QuadEaseIn"] = motion.easing.QuadEaseIn;
+motion.easing.QuadEaseIn.__name__ = ["motion","easing","QuadEaseIn"];
+motion.easing.QuadEaseIn.__interfaces__ = [motion.easing.IEasing];
+motion.easing.QuadEaseIn.prototype = {
+	calculate: function(k) {
+		return k * k;
+	}
+	,ease: function(t,b,c,d) {
+		return c * (t /= d) * t + b;
+	}
+	,__class__: motion.easing.QuadEaseIn
+};
+motion.easing.QuadEaseInOut = function() {
+};
+$hxClasses["motion.easing.QuadEaseInOut"] = motion.easing.QuadEaseInOut;
+motion.easing.QuadEaseInOut.__name__ = ["motion","easing","QuadEaseInOut"];
+motion.easing.QuadEaseInOut.__interfaces__ = [motion.easing.IEasing];
+motion.easing.QuadEaseInOut.prototype = {
+	calculate: function(k) {
+		if((k *= 2) < 1) return 0.5 * k * k;
+		return -0.5 * ((k - 1) * (k - 3) - 1);
+	}
+	,ease: function(t,b,c,d) {
+		if((t /= d / 2) < 1) return c / 2 * t * t + b;
+		return -c / 2 * ((t - 1) * (t - 3) - 1) + b;
+	}
+	,__class__: motion.easing.QuadEaseInOut
+};
+motion.easing.QuadEaseOut = function() {
+};
+$hxClasses["motion.easing.QuadEaseOut"] = motion.easing.QuadEaseOut;
+motion.easing.QuadEaseOut.__name__ = ["motion","easing","QuadEaseOut"];
+motion.easing.QuadEaseOut.__interfaces__ = [motion.easing.IEasing];
+motion.easing.QuadEaseOut.prototype = {
+	calculate: function(k) {
+		return -k * (k - 2);
+	}
+	,ease: function(t,b,c,d) {
+		return -c * (t /= d) * (t - 2) + b;
+	}
+	,__class__: motion.easing.QuadEaseOut
 };
 openfl.AssetCache = function() {
 	this.enabled = true;
@@ -3100,6 +4294,7 @@ openfl._Vector = {};
 openfl._Vector.Vector_Impl_ = function() { };
 $hxClasses["openfl._Vector.Vector_Impl_"] = openfl._Vector.Vector_Impl_;
 openfl._Vector.Vector_Impl_.__name__ = ["openfl","_Vector","Vector_Impl_"];
+openfl._Vector.Vector_Impl_.__properties__ = {set_fixed:"set_fixed",get_fixed:"get_fixed",set_length:"set_length",get_length:"get_length"}
 openfl._Vector.Vector_Impl_._new = function(length,fixed) {
 	if(fixed == null) fixed = false;
 	if(length == null) length = 0;
@@ -4352,6 +5547,7 @@ openfl.display.FrameLabel.prototype = $extend(openfl.events.EventDispatcher.prot
 		return this.__name;
 	}
 	,__class__: openfl.display.FrameLabel
+	,__properties__: {get_name:"get_name",get_frame:"get_frame"}
 });
 openfl.display.GradientType = $hxClasses["openfl.display.GradientType"] = { __ename__ : true, __constructs__ : ["RADIAL","LINEAR"] };
 openfl.display.GradientType.RADIAL = ["RADIAL",0];
@@ -5066,6 +6262,7 @@ openfl.display.MovieClip.prototype = $extend(openfl.display.Sprite.prototype,{
 		return this.__totalFrames;
 	}
 	,__class__: openfl.display.MovieClip
+	,__properties__: $extend(openfl.display.Sprite.prototype.__properties__,{get_totalFrames:"get_totalFrames",get_framesLoaded:"get_framesLoaded",get_currentLabels:"get_currentLabels",get_currentLabel:"get_currentLabel",get_currentFrameLabel:"get_currentFrameLabel",get_currentFrame:"get_currentFrame"})
 });
 openfl.display.PixelSnapping = $hxClasses["openfl.display.PixelSnapping"] = { __ename__ : true, __constructs__ : ["NEVER","AUTO","ALWAYS"] };
 openfl.display.PixelSnapping.NEVER = ["NEVER",0];
@@ -5144,6 +6341,7 @@ openfl.display.Shape.prototype = $extend(openfl.display.DisplayObject.prototype,
 		return this.__graphics;
 	}
 	,__class__: openfl.display.Shape
+	,__properties__: $extend(openfl.display.DisplayObject.prototype.__properties__,{get_graphics:"get_graphics"})
 });
 openfl.display.SpreadMethod = $hxClasses["openfl.display.SpreadMethod"] = { __ename__ : true, __constructs__ : ["REPEAT","REFLECT","PAD"] };
 openfl.display.SpreadMethod.REPEAT = ["REPEAT",0];
@@ -5682,6 +6880,7 @@ openfl.display.Stage.prototype = $extend(openfl.display.Sprite.prototype,{
 		return value;
 	}
 	,__class__: openfl.display.Stage
+	,__properties__: $extend(openfl.display.Sprite.prototype.__properties__,{set_focus:"set_focus",get_focus:"get_focus",set_displayState:"set_displayState",set_color:"set_color",get_color:"get_color"})
 });
 openfl.display.RenderSession = function() {
 	this.maskManager = new openfl.display.MaskManager(this);
@@ -6181,6 +7380,7 @@ openfl.geom.ColorTransform.prototype = {
 		return this.get_color();
 	}
 	,__class__: openfl.geom.ColorTransform
+	,__properties__: {set_color:"set_color",get_color:"get_color"}
 };
 openfl.geom.Matrix = function(a,b,c,d,tx,ty) {
 	if(ty == null) ty = 0;
@@ -6469,6 +7669,7 @@ openfl.geom.Point.prototype = {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	}
 	,__class__: openfl.geom.Point
+	,__properties__: {get_length:"get_length"}
 };
 openfl.geom.Rectangle = function(x,y,width,height) {
 	if(height == null) height = 0;
@@ -6674,6 +7875,7 @@ openfl.geom.Rectangle.prototype = {
 		return p.clone();
 	}
 	,__class__: openfl.geom.Rectangle
+	,__properties__: {set_topLeft:"set_topLeft",get_topLeft:"get_topLeft",set_top:"set_top",get_top:"get_top",set_size:"set_size",get_size:"get_size",set_right:"set_right",get_right:"get_right",set_left:"set_left",get_left:"get_left",set_bottomRight:"set_bottomRight",get_bottomRight:"get_bottomRight",set_bottom:"set_bottom",get_bottom:"get_bottom"}
 };
 openfl.geom.Transform = function(displayObject) {
 	this.colorTransform = new openfl.geom.ColorTransform();
@@ -6708,6 +7910,7 @@ openfl.geom.Transform.prototype = {
 		return value;
 	}
 	,__class__: openfl.geom.Transform
+	,__properties__: {set_matrix:"set_matrix",get_matrix:"get_matrix"}
 };
 openfl.geom.Vector3D = function(x,y,z,w) {
 	if(w == null) w = 0.;
@@ -6721,6 +7924,7 @@ openfl.geom.Vector3D = function(x,y,z,w) {
 };
 $hxClasses["openfl.geom.Vector3D"] = openfl.geom.Vector3D;
 openfl.geom.Vector3D.__name__ = ["openfl","geom","Vector3D"];
+openfl.geom.Vector3D.__properties__ = {get_Z_AXIS:"get_Z_AXIS",get_Y_AXIS:"get_Y_AXIS",get_X_AXIS:"get_X_AXIS"}
 openfl.geom.Vector3D.X_AXIS = null;
 openfl.geom.Vector3D.Y_AXIS = null;
 openfl.geom.Vector3D.Z_AXIS = null;
@@ -6824,6 +8028,7 @@ openfl.geom.Vector3D.prototype = {
 		return this.x * this.x + this.y * this.y + this.z * this.z;
 	}
 	,__class__: openfl.geom.Vector3D
+	,__properties__: {get_lengthSquared:"get_lengthSquared",get_length:"get_length"}
 };
 openfl.media = {};
 openfl.media.ID3Info = function() {
@@ -6884,6 +8089,7 @@ openfl.media.Sound.prototype = $extend(openfl.events.EventDispatcher.prototype,{
 		}
 	}
 	,__class__: openfl.media.Sound
+	,__properties__: {get_id3:"get_id3"}
 });
 openfl.media.SoundChannel = function(soundInstance) {
 	openfl.events.EventDispatcher.call(this,this);
@@ -6920,6 +8126,7 @@ openfl.media.SoundChannel.prototype = $extend(openfl.events.EventDispatcher.prot
 		this.dispatchEvent(new openfl.events.Event(openfl.events.Event.SOUND_COMPLETE));
 	}
 	,__class__: openfl.media.SoundChannel
+	,__properties__: {set_soundTransform:"set_soundTransform",get_soundTransform:"get_soundTransform",set_position:"set_position",get_position:"get_position"}
 });
 openfl.media.SoundLoaderContext = function(bufferTime,checkPolicyFile) {
 	if(checkPolicyFile == null) checkPolicyFile = false;
@@ -7088,6 +8295,7 @@ openfl.net.URLLoader.prototype = $extend(openfl.events.EventDispatcher.prototype
 		return this.dataFormat;
 	}
 	,__class__: openfl.net.URLLoader
+	,__properties__: {set_dataFormat:"set_dataFormat"}
 });
 openfl.net.URLLoaderDataFormat = $hxClasses["openfl.net.URLLoaderDataFormat"] = { __ename__ : true, __constructs__ : ["BINARY","TEXT","VARIABLES"] };
 openfl.net.URLLoaderDataFormat.BINARY = ["BINARY",0];
@@ -7638,6 +8846,7 @@ openfl.utils.ByteArray.prototype = {
 		return value;
 	}
 	,__class__: openfl.utils.ByteArray
+	,__properties__: {set_length:"set_length",set_endian:"set_endian",get_endian:"get_endian",get_bytesAvailable:"get_bytesAvailable"}
 };
 openfl.utils.Endian = function() { };
 $hxClasses["openfl.utils.Endian"] = openfl.utils.Endian;
@@ -7682,10 +8891,17 @@ ApplicationMain.total = 0;
 Constants.pixelsPerMeter = 10;
 Constants.densityOf20DegreeWater = 999.7026;
 Constants.g = 9.81;
+Constants.oceanLevel = 6;
 haxe.Unserializer.DEFAULT_RESOLVER = Type;
 haxe.Unserializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
 haxe.Unserializer.CODES = null;
 haxe.ds.ObjectMap.count = 0;
+motion.actuators.SimpleActuator.actuators = new Array();
+motion.actuators.SimpleActuator.actuatorsLength = 0;
+motion.actuators.SimpleActuator.addedEvent = false;
+motion.Actuate.defaultActuator = motion.actuators.SimpleActuator;
+motion.Actuate.defaultEase = motion.easing.Expo.get_easeOut();
+motion.Actuate.targetLibraries = new haxe.ds.ObjectMap();
 openfl.Assets.cache = new openfl.AssetCache();
 openfl.Assets.libraries = new haxe.ds.StringMap();
 openfl.Assets.dispatcher = new openfl.events.EventDispatcher();

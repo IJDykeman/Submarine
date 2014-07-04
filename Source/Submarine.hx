@@ -15,12 +15,13 @@ class Submarine extends UnderwaterObject {
 	public function new () {
 		super();
 		volume = 1996;
-		setMass(748714);
+		setMass(1995406);
 
 		super ();
 		bitmap = new Bitmap (Assets.getBitmapData ("assets/sub.png"));
+		var oldWidth = bitmap.width;
 		bitmap.width =67.1*Constants.pixelsPerMeter;
-		bitmap.height =6.2*Constants.pixelsPerMeter;
+		bitmap.height *= 67.1*Constants.pixelsPerMeter/oldWidth;
 		bitmap.x = 0;
 		bitmap.y = 0;
 		this.addChild(bitmap);
@@ -43,7 +44,7 @@ class Submarine extends UnderwaterObject {
 
 		location.x += velocity.x;
 		location.y += velocity.y;
-		trace(velocity.x);
+		//trace(velocity.x);
 	}
 
 	public function setEnginePower(nPower:Float){

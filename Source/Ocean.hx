@@ -12,7 +12,7 @@ import openfl.Assets;
 class Ocean extends Sprite {
 	
 	var square : Sprite;
-	var oceanLevel : Float = 6*Constants.pixelsPerMeter;
+
 
 
 	public function new () {
@@ -22,7 +22,7 @@ class Ocean extends Sprite {
         square.graphics.beginFill(0x294973, 1);
         square.graphics.drawRect(0, 0, 2000,2000);
         square.x = 0;
-        square.y = oceanLevel;
+        square.y = Constants.oceanLevel*Constants.pixelsPerMeter;
 		this.addChild(square);
 
 

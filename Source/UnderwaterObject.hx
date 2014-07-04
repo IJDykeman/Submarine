@@ -10,6 +10,7 @@ class UnderwaterObject extends Actor {
 
 	public function new () {
 		super();
+
 		
 	}
 
@@ -24,12 +25,26 @@ class UnderwaterObject extends Actor {
 	private function getDrag () : Vector{
 		var facingAreaOfShip:Float = 100;
 		return new Vector(-.5*drag*velocity.x*velocity.x*Constants.densityOf20DegreeWater*facingAreaOfShip,
-			-.5*drag*velocity.y*velocity.y*Constants.densityOf20DegreeWater*facingAreaOfShip);
+			-.5*drag*velocity.y*velocity.y*Constants.densityOf20DegreeWater*facingAreaOfShip*600 
+			* (velocity.y/Math.abs(velocity.y+.000000000001)));
 	}
 
 	private function getBouyancyAndGravityForce () : Vector{
 		var facingAreaOfShip:Float = 29.76;
-		return new Vector (0,0);//(0,-Constants.g*volume*Constants.densityOf20DegreeWater + mass*Constants.g);
+		var heightInMeters :Float = height/Constants.pixelsPerMeter;
+		var fractionBelowWater :Float = Helpers.clamp((location.y + heightInMeters -Constants.oceanLevel) /
+		 heightInMeters,0,1);
+
+		 //((location.y-Constants.oceanLevel)*(height/Constants.pixelsPerMeter)-Constants.oceanLevel);
+		 //fractionBelowWater =1;
+		// fractionSubmerged/fractionAbove
+		if(fractionBelowWater !=1){
+			trace("belowWater "+fractionBelowWater);
+			//trace("heightInMeters "+heightInMeters);
+			//trace("bottombelowwater "+(location.y+heightInMeters-Constants.oceanLevel));
+		}
+
+		return new Vector (0,-Constants.g*volume * fractionBelowWater*Constants.densityOf20DegreeWater + mass*Constants.g);
 	}
 	
 	function getAllForces () : Vector{

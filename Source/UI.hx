@@ -14,4 +14,8 @@ class UI extends Sprite{
 		return throttleControl.onClick(x,y);
 	}
 
+	public function handleResize(nWidth:Int, nHeight:Int){
+		throttleControl.onResize(nWidth,nHeight);
+	}
+
 }

@@ -1,4 +1,6 @@
 -main ApplicationMain 
+-cp /usr/lib/haxe/lib/actuate/1,7,5/
+-D actuate=1.7.5
 -cp /usr/lib/haxe/lib/openfl/2,0,1/
 -D openfl=2.0.1
 -cp Source

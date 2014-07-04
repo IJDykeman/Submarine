@@ -18,10 +18,11 @@ class Main extends Sprite {
 		world = new World();
 		addChild(world);
 		stage.addEventListener (Event.ENTER_FRAME, onEnterFrame);
-
+		stage.addEventListener(Event.RESIZE, onResize);
 		addEventListener (MouseEvent.MOUSE_DOWN, onMouseDown);
 
 		mainUI = new UI();
+		mainUI.y=0;
 		addChild(mainUI);
 
 
@@ -37,6 +38,16 @@ class Main extends Sprite {
 		var clickY:Int = cast(event.stageY, Int);	
 		handleUIAction(mainUI.getActionFromClick(clickX,clickY));
 		//UIAction action = 
+
+	}
+
+	
+
+	private function onResize(e:Event):Void 
+	{
+		var scaleX = stage.stageWidth;
+		var scaleY = stage.stageHeight;
+		mainUI.handleResize(scaleX,scaleY);
 
 	}
 
