@@ -50,6 +50,8 @@ class DefaultAssetLibrary extends AssetLibrary {
 		type.set ("assets/depthGuage.png", AssetType.IMAGE);
 		className.set ("assets/soccerBall.png", __ASSET__assets_soccerball_png);
 		type.set ("assets/soccerBall.png", AssetType.IMAGE);
+		className.set ("assets/standingSailor.png", __ASSET__assets_standingsailor_png);
+		type.set ("assets/standingSailor.png", AssetType.IMAGE);
 		className.set ("assets/sub.png", __ASSET__assets_sub_png);
 		type.set ("assets/sub.png", AssetType.IMAGE);
 		className.set ("assets/throttleControlBackground.png", __ASSET__assets_throttlecontrolbackground_png);
@@ -65,6 +67,9 @@ class DefaultAssetLibrary extends AssetLibrary {
 		path.set (id, id);
 		type.set (id, AssetType.IMAGE);
 		id = "assets/soccerBall.png";
+		path.set (id, id);
+		type.set (id, AssetType.IMAGE);
+		id = "assets/standingSailor.png";
 		path.set (id, id);
 		type.set (id, AssetType.IMAGE);
 		id = "assets/sub.png";
@@ -89,6 +94,9 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		className.set ("assets/soccerBall.png", __ASSET__assets_soccerball_png);
 		type.set ("assets/soccerBall.png", AssetType.IMAGE);
+		
+		className.set ("assets/standingSailor.png", __ASSET__assets_standingsailor_png);
+		type.set ("assets/standingSailor.png", AssetType.IMAGE);
 		
 		className.set ("assets/sub.png", __ASSET__assets_sub_png);
 		type.set ("assets/sub.png", AssetType.IMAGE);
@@ -717,6 +725,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 
 @:keep class __ASSET__assets_depthguage_png extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
 @:keep class __ASSET__assets_soccerball_png extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
+@:keep class __ASSET__assets_standingsailor_png extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
 @:keep class __ASSET__assets_sub_png extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
 @:keep class __ASSET__assets_throttlecontrolbackground_png extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
 @:keep class __ASSET__assets_throttlehandle_png extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }
@@ -731,11 +740,13 @@ class DefaultAssetLibrary extends AssetLibrary {
 
 
 
+
 #elseif (windows || mac || linux)
 
 
 @:bitmap("Assets/depthGuage.png") class __ASSET__assets_depthguage_png extends flash.display.BitmapData {}
 @:bitmap("Assets/soccerBall.png") class __ASSET__assets_soccerball_png extends flash.display.BitmapData {}
+@:bitmap("Assets/standingSailor.png") class __ASSET__assets_standingsailor_png extends flash.display.BitmapData {}
 @:bitmap("Assets/sub.png") class __ASSET__assets_sub_png extends flash.display.BitmapData {}
 @:bitmap("Assets/throttleControlBackground.png") class __ASSET__assets_throttlecontrolbackground_png extends flash.display.BitmapData {}
 @:bitmap("Assets/throttleHandle.png") class __ASSET__assets_throttlehandle_png extends flash.display.BitmapData {}

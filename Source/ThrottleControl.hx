@@ -8,9 +8,9 @@ import flash.geom.Rectangle;
 import motion.Actuate;
 import motion.easing.Quad;
 
-class ThrottleControl extends UIElement{
+class ThrottleControl extends UILever{
 
-	private var handle:Bitmap;
+
 
 	public function new(){
 		super();
@@ -34,30 +34,11 @@ class ThrottleControl extends UIElement{
 
 
 	public override function onClick(mouseX:Int,mouseY:Int) : UIAction{
-		
-
-
-
-		var limits1:Rectangle = bitmap.getBounds(bitmap.parent);
-		if(super.pointIsInRect(mouseX,mouseY,limits1)){
-			var result : UIAction;
-			var nPower:Float = (cast(Lib.current.stage.stageHeight-height/2.0-mouseY,Float) - y)/(height/2.0);
-			Actuate.tween (handle, .2, { x: handle.x, y: mouseY-handle.height/2 }, false).ease(Quad.easeOut);
-			trace("throttle to "+nPower);
-			result = new SetEnginePowerUIAction(nPower);
-			trace("rect y "+limits1.y);
-
-			return result;
-		}
-
-		return new NoUIAction();
-
+		super.onClick(mouseX,mouseY);
+		var nPower:Float = settingNormal*2-1;
+		return new SetEnginePowerUIAction(nPower);
 	}
 
-	public override function onResize(nWidth:Int,nHeight:Int){
-		handle.y=Lib.current.stage.stageHeight-handle.height;
-		bitmap.y= Lib.current.stage.stageHeight-bitmap.height;
-	}
 
 
 

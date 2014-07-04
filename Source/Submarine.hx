@@ -11,6 +11,7 @@ class Submarine extends UnderwaterObject {
 	
 	var engineSettingNormal : Float=0;
 	var enginePower : Float = 1000;
+	var sailor:Sailor;
 
 	public function new () {
 		super();
@@ -30,7 +31,9 @@ class Submarine extends UnderwaterObject {
 		drag = .09;
 		location = new Vector(2,15);
 		engineSettingNormal = 0;
-		
+
+		sailor = new Sailor();
+		addChild(sailor);
 	}
 
 	public override function update(seconds:Float){
@@ -45,6 +48,7 @@ class Submarine extends UnderwaterObject {
 		location.x += velocity.x;
 		location.y += velocity.y;
 		//trace(velocity.x);
+		sailor.update(seconds);
 	}
 
 	public function setEnginePower(nPower:Float){

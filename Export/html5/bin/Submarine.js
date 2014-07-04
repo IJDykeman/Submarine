@@ -882,6 +882,7 @@ openfl.display.Sprite.prototype = $extend(openfl.display.DisplayObjectContainer.
 var Actor = function() {
 	openfl.display.Sprite.call(this);
 	this.location = new Vector(0,0);
+	this.velocity = new Vector(0,0);
 };
 $hxClasses["Actor"] = Actor;
 Actor.__name__ = ["Actor"];
@@ -930,22 +931,28 @@ ApplicationMain.embed = $hx_exports.openfl.embed = function(elementName,width,he
 	image1.src = id;
 	ApplicationMain.total++;
 	var image2 = new Image();
-	id = "assets/sub.png";
+	id = "assets/standingSailor.png";
 	ApplicationMain.images.set(id,image2);
 	image2.onload = ApplicationMain.image_onLoad;
 	image2.src = id;
 	ApplicationMain.total++;
 	var image3 = new Image();
-	id = "assets/throttleControlBackground.png";
+	id = "assets/sub.png";
 	ApplicationMain.images.set(id,image3);
 	image3.onload = ApplicationMain.image_onLoad;
 	image3.src = id;
 	ApplicationMain.total++;
 	var image4 = new Image();
-	id = "assets/throttleHandle.png";
+	id = "assets/throttleControlBackground.png";
 	ApplicationMain.images.set(id,image4);
 	image4.onload = ApplicationMain.image_onLoad;
 	image4.src = id;
+	ApplicationMain.total++;
+	var image5 = new Image();
+	id = "assets/throttleHandle.png";
+	ApplicationMain.images.set(id,image5);
+	image5.onload = ApplicationMain.image_onLoad;
+	image5.src = id;
 	ApplicationMain.total++;
 	if(ApplicationMain.total == 0) ApplicationMain.start(); else {
 		var $it0 = ApplicationMain.urlLoaders.keys();
@@ -1000,8 +1007,8 @@ ApplicationMain.preloader_onComplete = function(event) {
 	if(hasMain) Reflect.callMethod(Main,Reflect.field(Main,"main"),[]); else {
 		var instance = Type.createInstance(DocumentClass,[]);
 		if(js.Boot.__instanceof(instance,openfl.display.DisplayObject)) openfl.Lib.current.addChild(instance); else {
-			haxe.Log.trace("Error: No entry point found",{ fileName : "ApplicationMain.hx", lineNumber : 235, className : "ApplicationMain", methodName : "preloader_onComplete"});
-			haxe.Log.trace("If you are using DCE with a static main, you may need to @:keep the function",{ fileName : "ApplicationMain.hx", lineNumber : 236, className : "ApplicationMain", methodName : "preloader_onComplete"});
+			haxe.Log.trace("Error: No entry point found",{ fileName : "ApplicationMain.hx", lineNumber : 246, className : "ApplicationMain", methodName : "preloader_onComplete"});
+			haxe.Log.trace("If you are using DCE with a static main, you may need to @:keep the function",{ fileName : "ApplicationMain.hx", lineNumber : 247, className : "ApplicationMain", methodName : "preloader_onComplete"});
 		}
 	}
 };
@@ -1151,6 +1158,9 @@ var DefaultAssetLibrary = function() {
 	this.path.set(id,id);
 	this.type.set(id,openfl.AssetType.IMAGE);
 	id = "assets/soccerBall.png";
+	this.path.set(id,id);
+	this.type.set(id,openfl.AssetType.IMAGE);
+	id = "assets/standingSailor.png";
 	this.path.set(id,id);
 	this.type.set(id,openfl.AssetType.IMAGE);
 	id = "assets/sub.png";
@@ -1548,6 +1558,36 @@ Reflect.deleteField = function(o,field) {
 	delete(o[field]);
 	return true;
 };
+var Sailor = function() {
+	this.targetXLocation = 20;
+	this.walkSpeed = 2.0;
+	Actor.call(this);
+	this.setMass(1995406);
+	Actor.call(this);
+	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/standingSailor.png"));
+	this.bitmap.set_width(22);
+	this.bitmap.set_height(22);
+	this.addChild(this.bitmap);
+	this.location.x = 55;
+	this.location.y = 6.2;
+};
+$hxClasses["Sailor"] = Sailor;
+Sailor.__name__ = ["Sailor"];
+Sailor.__super__ = Actor;
+Sailor.prototype = $extend(Actor.prototype,{
+	update: function(seconds) {
+		Actor.prototype.update.call(this,seconds);
+		haxe.Log.trace("location x " + this.location.x,{ fileName : "Sailor.hx", lineNumber : 33, className : "Sailor", methodName : "update"});
+		if(this.velocity.x < .00001) this.velocity.x = 0;
+		var walk = this.targetXLocation - this.location.x;
+		walk = Helpers.clamp(walk,-1,1);
+		walk *= this.walkSpeed / Constants.pixelsPerMeter;
+		this.location.x += walk;
+		this.location.x += this.velocity.x;
+		this.location.y += this.velocity.y;
+	}
+	,__class__: Sailor
+});
 var SetEnginePowerUIAction = function(nPowerNormal) {
 	this.type = UIActionType.UIActionSetEnginePower;
 	this.powerNormal = nPowerNormal;
@@ -1635,6 +1675,8 @@ var Submarine = function() {
 	this.drag = .09;
 	this.location = new Vector(2,15);
 	this.engineSettingNormal = 0;
+	this.sailor = new Sailor();
+	this.addChild(this.sailor);
 };
 $hxClasses["Submarine"] = Submarine;
 Submarine.__name__ = ["Submarine"];
@@ -1646,6 +1688,7 @@ Submarine.prototype = $extend(UnderwaterObject.prototype,{
 		if(this.velocity.x < .00001) this.velocity.x = 0;
 		this.location.x += this.velocity.x;
 		this.location.y += this.velocity.y;
+		this.sailor.update(seconds);
 	}
 	,setEnginePower: function(nPower) {
 		this.engineSettingNormal = nPower;
@@ -1671,8 +1714,30 @@ UIElement.prototype = $extend(openfl.display.Sprite.prototype,{
 	}
 	,__class__: UIElement
 });
-var ThrottleControl = function() {
+var UILever = function() {
+	this.settingNormal = 0;
 	UIElement.call(this);
+};
+$hxClasses["UILever"] = UILever;
+UILever.__name__ = ["UILever"];
+UILever.__super__ = UIElement;
+UILever.prototype = $extend(UIElement.prototype,{
+	onClick: function(mouseX,mouseY) {
+		var limits1 = this.bitmap.getBounds(this.bitmap.parent);
+		if(UIElement.prototype.pointIsInRect.call(this,mouseX,mouseY,limits1)) {
+			this.settingNormal = (this.bitmap.get_y() + this.bitmap.get_height() - mouseY) / this.get_height();
+			motion.Actuate.tween(this.handle,.2,{ x : this.handle.get_x(), y : mouseY - this.handle.get_height() / 2},false).ease(motion.easing.Quad.get_easeOut());
+		}
+		return new NoUIAction();
+	}
+	,onResize: function(nWidth,nHeight) {
+		this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
+		this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
+	}
+	,__class__: UILever
+});
+var ThrottleControl = function() {
+	UILever.call(this);
 	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/throttleControlBackground.png"));
 	this.bitmap.set_width(100);
 	this.bitmap.set_height(this.bitmap.get_width() * 1.61803398875);
@@ -1689,25 +1754,12 @@ var ThrottleControl = function() {
 };
 $hxClasses["ThrottleControl"] = ThrottleControl;
 ThrottleControl.__name__ = ["ThrottleControl"];
-ThrottleControl.__super__ = UIElement;
-ThrottleControl.prototype = $extend(UIElement.prototype,{
+ThrottleControl.__super__ = UILever;
+ThrottleControl.prototype = $extend(UILever.prototype,{
 	onClick: function(mouseX,mouseY) {
-		var limits1 = this.bitmap.getBounds(this.bitmap.parent);
-		if(UIElement.prototype.pointIsInRect.call(this,mouseX,mouseY,limits1)) {
-			var result;
-			var nPower;
-			nPower = (js.Boot.__cast(openfl.Lib.current.stage.stageHeight - this.get_height() / 2.0 - mouseY , Float) - this.get_y()) / (this.get_height() / 2.0);
-			motion.Actuate.tween(this.handle,.2,{ x : this.handle.get_x(), y : mouseY - this.handle.get_height() / 2},false).ease(motion.easing.Quad.get_easeOut());
-			haxe.Log.trace("throttle to " + nPower,{ fileName : "ThrottleControl.hx", lineNumber : 46, className : "ThrottleControl", methodName : "onClick"});
-			result = new SetEnginePowerUIAction(nPower);
-			haxe.Log.trace("rect y " + limits1.y,{ fileName : "ThrottleControl.hx", lineNumber : 48, className : "ThrottleControl", methodName : "onClick"});
-			return result;
-		}
-		return new NoUIAction();
-	}
-	,onResize: function(nWidth,nHeight) {
-		this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
-		this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
+		UILever.prototype.onClick.call(this,mouseX,mouseY);
+		var nPower = this.settingNormal * 2 - 1;
+		return new SetEnginePowerUIAction(nPower);
 	}
 	,__class__: ThrottleControl
 });

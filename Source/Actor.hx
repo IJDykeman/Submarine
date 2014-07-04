@@ -13,6 +13,7 @@ class Actor extends Sprite {
 	public function new () {
 		super();		
 		location = new Vector(0,0);
+		velocity = new Vector(0,0);
 		
 	}
 

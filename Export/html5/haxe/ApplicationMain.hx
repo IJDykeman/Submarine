@@ -92,6 +92,17 @@ import openfl.Lib;
 		
 		
 		var image = new Image ();
+		id = "assets/standingSailor.png";
+		images.set (id, image);
+		image.onload = image_onLoad;
+		image.src = id;
+		//var loader:Loader = new Loader();
+		//loaders.set("assets/standingSailor.png", loader);
+		total ++;
+		
+		
+		
+		var image = new Image ();
 		id = "assets/sub.png";
 		images.set (id, image);
 		image.onload = image_onLoad;
