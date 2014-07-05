@@ -30,6 +30,7 @@ class UILever extends UIElement{
 	public override function onResize(nWidth:Int,nHeight:Int){
 		handle.y=Lib.current.stage.stageHeight-handle.height;
 		bitmap.y= Lib.current.stage.stageHeight-bitmap.height;
+		trace("in onResize");
 	}
 
 }

@@ -35,14 +35,7 @@ class UnderwaterObject extends Actor {
 		var fractionBelowWater :Float = Helpers.clamp((location.y + heightInMeters -Constants.oceanLevel) /
 		 heightInMeters,0,1);
 
-		 //((location.y-Constants.oceanLevel)*(height/Constants.pixelsPerMeter)-Constants.oceanLevel);
-		 //fractionBelowWater =1;
-		// fractionSubmerged/fractionAbove
-		if(fractionBelowWater !=1){
-			trace("belowWater "+fractionBelowWater);
-			//trace("heightInMeters "+heightInMeters);
-			//trace("bottombelowwater "+(location.y+heightInMeters-Constants.oceanLevel));
-		}
+
 
 		return new Vector (0,-Constants.g*volume * fractionBelowWater*Constants.densityOf20DegreeWater + mass*Constants.g);
 	}

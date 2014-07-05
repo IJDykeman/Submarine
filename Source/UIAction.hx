@@ -3,6 +3,7 @@ package;
 enum UIActionType{
 	UIActionNone;
 	UIActionSetEnginePower;
+	UIActionSetBalastTankLevel;
 }
 
 class UIAction{
@@ -10,7 +11,6 @@ class UIAction{
 
 	public var type : UIActionType;
 }
-
 
 
 

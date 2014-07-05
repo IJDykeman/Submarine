@@ -12,6 +12,7 @@ class Submarine extends UnderwaterObject {
 	var engineSettingNormal : Float=0;
 	var enginePower : Float = 1000;
 	var sailor:Sailor;
+	var balastTankLevelNormal:Float = .5;
 
 	public function new () {
 		super();
@@ -38,7 +39,7 @@ class Submarine extends UnderwaterObject {
 
 	public override function update(seconds:Float){
 		super.update(seconds);
-
+		setMass(1985406+20000.0*balastTankLevelNormal);
 		velocity.x += engineSettingNormal*(enginePower/getMass());
 
 		if(velocity.x<.00001){
@@ -53,6 +54,11 @@ class Submarine extends UnderwaterObject {
 
 	public function setEnginePower(nPower:Float){
 		engineSettingNormal = nPower;
+	}
+
+
+	public function setBalastTankLevelNormal(nLevel:Float){
+		balastTankLevelNormal = nLevel;
 	}
 	
 	

@@ -30,7 +30,6 @@ class Sailor extends Actor {
 
 	public override function update(seconds:Float){
 		super.update(seconds);
-		trace("location x "+location.x);
 		//velocity.x += engineSettingNormal*(enginePower/getMass());
 
 		if(velocity.x<.00001){

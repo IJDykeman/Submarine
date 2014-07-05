@@ -36,7 +36,10 @@ class Main extends Sprite {
 	private function onMouseDown (event:MouseEvent):Void {
 		var clickX:Int = cast(event.stageX, Int);
 		var clickY:Int = cast(event.stageY, Int);	
-		handleUIAction(mainUI.getActionFromClick(clickX,clickY));
+		var UIActions = mainUI.getActionsFromClick(clickX,clickY);
+		for( i in 0...UIActions.length ) {
+			handleUIAction(UIActions[i]);
+		}
 		//UIAction action = 
 
 	}
@@ -54,9 +57,11 @@ class Main extends Sprite {
 	private function handleUIAction(action:UIAction){
 		switch (action.type) {
 			case UIActionNone:
-			addChild(new Flotsam(0,0));
+				addChild(new Flotsam(0,0));
 			case UIActionSetEnginePower:
-			world.boot.setEnginePower(cast(action,SetEnginePowerUIAction).getPowerNormal());
+				world.boot.setEnginePower(cast(action,SetEnginePowerUIAction).getPowerNormal());
+			case UIActionSetBalastTankLevel:
+				world.boot.setBalastTankLevelNormal(cast(action,SetBalastTankLevelUIAction).getLevelNormal());
 
 		}
 	}

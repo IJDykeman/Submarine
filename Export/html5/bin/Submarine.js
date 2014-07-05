@@ -954,6 +954,18 @@ ApplicationMain.embed = $hx_exports.openfl.embed = function(elementName,width,he
 	image5.onload = ApplicationMain.image_onLoad;
 	image5.src = id;
 	ApplicationMain.total++;
+	var image6 = new Image();
+	id = "assets/verticlePipe.png";
+	ApplicationMain.images.set(id,image6);
+	image6.onload = ApplicationMain.image_onLoad;
+	image6.src = id;
+	ApplicationMain.total++;
+	var image7 = new Image();
+	id = "assets/woodenBall.png";
+	ApplicationMain.images.set(id,image7);
+	image7.onload = ApplicationMain.image_onLoad;
+	image7.src = id;
+	ApplicationMain.total++;
 	if(ApplicationMain.total == 0) ApplicationMain.start(); else {
 		var $it0 = ApplicationMain.urlLoaders.keys();
 		while( $it0.hasNext() ) {
@@ -1007,8 +1019,8 @@ ApplicationMain.preloader_onComplete = function(event) {
 	if(hasMain) Reflect.callMethod(Main,Reflect.field(Main,"main"),[]); else {
 		var instance = Type.createInstance(DocumentClass,[]);
 		if(js.Boot.__instanceof(instance,openfl.display.DisplayObject)) openfl.Lib.current.addChild(instance); else {
-			haxe.Log.trace("Error: No entry point found",{ fileName : "ApplicationMain.hx", lineNumber : 246, className : "ApplicationMain", methodName : "preloader_onComplete"});
-			haxe.Log.trace("If you are using DCE with a static main, you may need to @:keep the function",{ fileName : "ApplicationMain.hx", lineNumber : 247, className : "ApplicationMain", methodName : "preloader_onComplete"});
+			haxe.Log.trace("Error: No entry point found",{ fileName : "ApplicationMain.hx", lineNumber : 268, className : "ApplicationMain", methodName : "preloader_onComplete"});
+			haxe.Log.trace("If you are using DCE with a static main, you may need to @:keep the function",{ fileName : "ApplicationMain.hx", lineNumber : 269, className : "ApplicationMain", methodName : "preloader_onComplete"});
 		}
 	}
 };
@@ -1046,7 +1058,13 @@ Main.prototype = $extend(openfl.display.Sprite.prototype,{
 		clickX = js.Boot.__cast(event.stageX , Int);
 		var clickY;
 		clickY = js.Boot.__cast(event.stageY , Int);
-		this.handleUIAction(this.mainUI.getActionFromClick(clickX,clickY));
+		var UIActions = this.mainUI.getActionsFromClick(clickX,clickY);
+		var _g1 = 0;
+		var _g = UIActions.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.handleUIAction(UIActions[i]);
+		}
 	}
 	,onResize: function(e) {
 		var scaleX = this.stage.stageWidth;
@@ -1061,6 +1079,9 @@ Main.prototype = $extend(openfl.display.Sprite.prototype,{
 			break;
 		case 1:
 			this.world.boot.setEnginePower((js.Boot.__cast(action , SetEnginePowerUIAction)).getPowerNormal());
+			break;
+		case 2:
+			this.world.boot.setBalastTankLevelNormal((js.Boot.__cast(action , SetBalastTankLevelUIAction)).getLevelNormal());
 			break;
 		}
 	}
@@ -1170,6 +1191,12 @@ var DefaultAssetLibrary = function() {
 	this.path.set(id,id);
 	this.type.set(id,openfl.AssetType.IMAGE);
 	id = "assets/throttleHandle.png";
+	this.path.set(id,id);
+	this.type.set(id,openfl.AssetType.IMAGE);
+	id = "assets/verticlePipe.png";
+	this.path.set(id,id);
+	this.type.set(id,openfl.AssetType.IMAGE);
+	id = "assets/woodenBall.png";
 	this.path.set(id,id);
 	this.type.set(id,openfl.AssetType.IMAGE);
 };
@@ -1313,7 +1340,6 @@ UnderwaterObject.prototype = $extend(Actor.prototype,{
 		var facingAreaOfShip = 29.76;
 		var heightInMeters = this.get_height() / Constants.pixelsPerMeter;
 		var fractionBelowWater = Helpers.clamp((this.location.y + heightInMeters - Constants.oceanLevel) / heightInMeters,0,1);
-		if(fractionBelowWater != 1) haxe.Log.trace("belowWater " + fractionBelowWater,{ fileName : "UnderwaterObject.hx", lineNumber : 42, className : "UnderwaterObject", methodName : "getBouyancyAndGravityForce"});
 		return new Vector(0,-Constants.g * this.volume * fractionBelowWater * Constants.densityOf20DegreeWater + this.mass * Constants.g);
 	}
 	,getAllForces: function() {
@@ -1577,7 +1603,6 @@ Sailor.__super__ = Actor;
 Sailor.prototype = $extend(Actor.prototype,{
 	update: function(seconds) {
 		Actor.prototype.update.call(this,seconds);
-		haxe.Log.trace("location x " + this.location.x,{ fileName : "Sailor.hx", lineNumber : 33, className : "Sailor", methodName : "update"});
 		if(this.velocity.x < .00001) this.velocity.x = 0;
 		var walk = this.targetXLocation - this.location.x;
 		walk = Helpers.clamp(walk,-1,1);
@@ -1587,6 +1612,19 @@ Sailor.prototype = $extend(Actor.prototype,{
 		this.location.y += this.velocity.y;
 	}
 	,__class__: Sailor
+});
+var SetBalastTankLevelUIAction = function(nLevelNormal) {
+	this.type = UIActionType.UIActionSetBalastTankLevel;
+	this.levelNormal = nLevelNormal;
+};
+$hxClasses["SetBalastTankLevelUIAction"] = SetBalastTankLevelUIAction;
+SetBalastTankLevelUIAction.__name__ = ["SetBalastTankLevelUIAction"];
+SetBalastTankLevelUIAction.__super__ = UIAction;
+SetBalastTankLevelUIAction.prototype = $extend(UIAction.prototype,{
+	getLevelNormal: function() {
+		return this.levelNormal;
+	}
+	,__class__: SetBalastTankLevelUIAction
 });
 var SetEnginePowerUIAction = function(nPowerNormal) {
 	this.type = UIActionType.UIActionSetEnginePower;
@@ -1656,6 +1694,7 @@ StringTools.fastCodeAt = function(s,index) {
 	return s.charCodeAt(index);
 };
 var Submarine = function() {
+	this.balastTankLevelNormal = .5;
 	this.enginePower = 1000;
 	this.engineSettingNormal = 0;
 	UnderwaterObject.call(this);
@@ -1684,6 +1723,7 @@ Submarine.__super__ = UnderwaterObject;
 Submarine.prototype = $extend(UnderwaterObject.prototype,{
 	update: function(seconds) {
 		UnderwaterObject.prototype.update.call(this,seconds);
+		this.setMass(1985406 + 20000.0 * this.balastTankLevelNormal);
 		this.velocity.x += this.engineSettingNormal * (this.enginePower / this.getMass());
 		if(this.velocity.x < .00001) this.velocity.x = 0;
 		this.location.x += this.velocity.x;
@@ -1692,6 +1732,9 @@ Submarine.prototype = $extend(UnderwaterObject.prototype,{
 	}
 	,setEnginePower: function(nPower) {
 		this.engineSettingNormal = nPower;
+	}
+	,setBalastTankLevelNormal: function(nLevel) {
+		this.balastTankLevelNormal = nLevel;
 	}
 	,__class__: Submarine
 });
@@ -1733,6 +1776,7 @@ UILever.prototype = $extend(UIElement.prototype,{
 	,onResize: function(nWidth,nHeight) {
 		this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
 		this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
+		haxe.Log.trace("in onResize",{ fileName : "UILever.hx", lineNumber : 33, className : "UILever", methodName : "onResize"});
 	}
 	,__class__: UILever
 });
@@ -1750,7 +1794,6 @@ var ThrottleControl = function() {
 	this.handle.set_x(this.bitmap.get_x() + this.bitmap.get_width() / 2 - this.handle.get_width() / 2);
 	this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
 	this.addChild(this.handle);
-	var limits1 = this.bitmap.getBounds(this.bitmap.parent);
 };
 $hxClasses["ThrottleControl"] = ThrottleControl;
 ThrottleControl.__name__ = ["ThrottleControl"];
@@ -1840,25 +1883,59 @@ Type.getEnumConstructs = function(e) {
 var UI = function() {
 	openfl.display.Sprite.call(this);
 	this.throttleControl = new ThrottleControl();
+	this.balastControl = new UIBalastTankControl();
 	this.addChild(this.throttleControl);
+	this.addChild(this.balastControl);
 };
 $hxClasses["UI"] = UI;
 UI.__name__ = ["UI"];
 UI.__super__ = openfl.display.Sprite;
 UI.prototype = $extend(openfl.display.Sprite.prototype,{
-	getActionFromClick: function(x,y) {
-		return this.throttleControl.onClick(x,y);
+	getActionsFromClick: function(x,y) {
+		var result = [this.throttleControl.onClick(x,y),this.balastControl.onClick(x,y)];
+		return result;
 	}
 	,handleResize: function(nWidth,nHeight) {
 		this.throttleControl.onResize(nWidth,nHeight);
+		this.balastControl.onResize(nWidth,nHeight);
 	}
 	,__class__: UI
 });
-var UIActionType = $hxClasses["UIActionType"] = { __ename__ : true, __constructs__ : ["UIActionNone","UIActionSetEnginePower"] };
+var UIActionType = $hxClasses["UIActionType"] = { __ename__ : true, __constructs__ : ["UIActionNone","UIActionSetEnginePower","UIActionSetBalastTankLevel"] };
 UIActionType.UIActionNone = ["UIActionNone",0];
 UIActionType.UIActionNone.__enum__ = UIActionType;
 UIActionType.UIActionSetEnginePower = ["UIActionSetEnginePower",1];
 UIActionType.UIActionSetEnginePower.__enum__ = UIActionType;
+UIActionType.UIActionSetBalastTankLevel = ["UIActionSetBalastTankLevel",2];
+UIActionType.UIActionSetBalastTankLevel.__enum__ = UIActionType;
+var UIBalastTankControl = function() {
+	UILever.call(this);
+	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/verticlePipe.png"));
+	this.bitmap.set_width(100);
+	this.bitmap.set_height(this.bitmap.get_width() * 1.61803398875);
+	this.addChild(this.bitmap);
+	this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
+	this.bitmap.set_x(255);
+	this.handle = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/woodenBall.png"));
+	this.handle.set_width(160);
+	this.handle.set_height(40);
+	this.handle.set_x(this.bitmap.get_x() + this.bitmap.get_width() / 2 - this.handle.get_width() / 2);
+	this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
+	this.addChild(this.handle);
+	var limits1 = this.bitmap.getBounds(this.bitmap.parent);
+};
+$hxClasses["UIBalastTankControl"] = UIBalastTankControl;
+UIBalastTankControl.__name__ = ["UIBalastTankControl"];
+UIBalastTankControl.__super__ = UILever;
+UIBalastTankControl.prototype = $extend(UILever.prototype,{
+	onClick: function(mouseX,mouseY) {
+		UILever.prototype.onClick.call(this,mouseX,mouseY);
+		haxe.Log.trace("balast set to " + this.settingNormal,{ fileName : "UIBalastTankControl.hx", lineNumber : 38, className : "UIBalastTankControl", methodName : "onClick"});
+		if(Math.abs(this.settingNormal - .5) < .1) this.settingNormal = .5;
+		return new SetBalastTankLevelUIAction(this.settingNormal);
+	}
+	,__class__: UIBalastTankControl
+});
 var Vector = function(nX,nY) {
 	this.x = nX;
 	this.y = nY;

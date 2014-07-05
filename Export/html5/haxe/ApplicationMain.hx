@@ -135,6 +135,28 @@ import openfl.Lib;
 		
 		
 		
+		var image = new Image ();
+		id = "assets/verticlePipe.png";
+		images.set (id, image);
+		image.onload = image_onLoad;
+		image.src = id;
+		//var loader:Loader = new Loader();
+		//loaders.set("assets/verticlePipe.png", loader);
+		total ++;
+		
+		
+		
+		var image = new Image ();
+		id = "assets/woodenBall.png";
+		images.set (id, image);
+		image.onload = image_onLoad;
+		image.src = id;
+		//var loader:Loader = new Loader();
+		//loaders.set("assets/woodenBall.png", loader);
+		total ++;
+		
+		
+		
 		if (total == 0) {
 			
 			start ();
