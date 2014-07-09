@@ -24,7 +24,8 @@ class World extends Sprite{
 	public function update(){
 		ocean.x=-x;
 		boot.update(1.0/30.0);
-		x=-boot.location.x*cast(Constants.pixelsPerMeter,Float)+300.0;
+		x= -boot.location.x*cast(Constants.pixelsPerMeter,Float)+450.0;
+		y= -boot.location.y*Constants.pixelsPerMeter+stage.stageHeight/3;
 	}
 
 

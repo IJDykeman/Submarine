@@ -5,6 +5,9 @@ import flash.display.Bitmap;
 import flash.display.BitmapData;
 import flash.display.Sprite;
 import openfl.Assets;
+import motion.Actuate;
+import motion.easing.Quad;
+import motion.easing.Elastic;
 
 
 class Submarine extends UnderwaterObject {
@@ -12,7 +15,8 @@ class Submarine extends UnderwaterObject {
 	var engineSettingNormal : Float=0;
 	var enginePower : Float = 1000;
 	var sailor:Sailor;
-	var balastTankLevelNormal:Float = .5;
+	var sternBalastTankLevelNormal:Float = .5;
+	var bowBalastTankLevelNormal:Float = .5;
 
 	public function new () {
 		super();
@@ -24,7 +28,7 @@ class Submarine extends UnderwaterObject {
 		var oldWidth = bitmap.width;
 		bitmap.width =67.1*Constants.pixelsPerMeter;
 		bitmap.height *= 67.1*Constants.pixelsPerMeter/oldWidth;
-		bitmap.x = 0;
+		bitmap.x = -bitmap.width/2;
 		bitmap.y = 0;
 		this.addChild(bitmap);
 		velocity = new Vector(0,0);
@@ -35,11 +39,12 @@ class Submarine extends UnderwaterObject {
 
 		sailor = new Sailor();
 		addChild(sailor);
+		//rotation= 20;
 	}
 
 	public override function update(seconds:Float){
 		super.update(seconds);
-		setMass(1985406+20000.0*balastTankLevelNormal);
+		setMass(1985406+10000.0*sternBalastTankLevelNormal + 10000.0*bowBalastTankLevelNormal);
 		velocity.x += engineSettingNormal*(enginePower/getMass());
 
 		if(velocity.x<.00001){
@@ -50,6 +55,11 @@ class Submarine extends UnderwaterObject {
 		location.y += velocity.y;
 		//trace(velocity.x);
 		sailor.update(seconds);
+
+		var newRotation:Float = 0;
+		newRotation -= (sternBalastTankLevelNormal - bowBalastTankLevelNormal)*40;
+		Actuate.tween (this, 2, { rotation: newRotation }, false).ease(Quad.easeOut);
+		//rotation = newRotation;
 	}
 
 	public function setEnginePower(nPower:Float){
@@ -57,9 +67,17 @@ class Submarine extends UnderwaterObject {
 	}
 
 
-	public function setBalastTankLevelNormal(nLevel:Float){
-		balastTankLevelNormal = nLevel;
+	public function setBalastTankLevelNormal(nLevel:Float, shipEnd : ShipEnd){
+		switch(shipEnd){
+			case Stern:
+			Actuate.tween (this, 4, { sternBalastTankLevelNormal: nLevel }, false).ease(Quad.easeOut);
+			//sternBalastTankLevelNormal = nLevel;
+			case Bow:
+			Actuate.tween (this, 4, { bowBalastTankLevelNormal: nLevel }, false).ease(Quad.easeOut);
+			//bowBalastTankLevelNormal = nLevel;
+		}
 	}
+
 	
 	
 }

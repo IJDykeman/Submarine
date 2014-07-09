@@ -1081,7 +1081,7 @@ Main.prototype = $extend(openfl.display.Sprite.prototype,{
 			this.world.boot.setEnginePower((js.Boot.__cast(action , SetEnginePowerUIAction)).getPowerNormal());
 			break;
 		case 2:
-			this.world.boot.setBalastTankLevelNormal((js.Boot.__cast(action , SetBalastTankLevelUIAction)).getLevelNormal());
+			this.world.boot.setBalastTankLevelNormal((js.Boot.__cast(action , SetBalastTankLevelUIAction)).getLevelNormal(),(js.Boot.__cast(action , SetBalastTankLevelUIAction)).getShipEnd());
 			break;
 		}
 	}
@@ -1585,16 +1585,16 @@ Reflect.deleteField = function(o,field) {
 	return true;
 };
 var Sailor = function() {
-	this.targetXLocation = 20;
+	this.targetXLocation = 21;
 	this.walkSpeed = 2.0;
 	Actor.call(this);
 	this.setMass(1995406);
 	Actor.call(this);
 	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/standingSailor.png"));
-	this.bitmap.set_width(22);
-	this.bitmap.set_height(22);
+	this.bitmap.set_width(25);
+	this.bitmap.set_height(25);
 	this.addChild(this.bitmap);
-	this.location.x = 55;
+	this.location.x = -21;
 	this.location.y = 6.2;
 };
 $hxClasses["Sailor"] = Sailor;
@@ -1613,9 +1613,10 @@ Sailor.prototype = $extend(Actor.prototype,{
 	}
 	,__class__: Sailor
 });
-var SetBalastTankLevelUIAction = function(nLevelNormal) {
+var SetBalastTankLevelUIAction = function(nLevelNormal,nBowOrStern) {
 	this.type = UIActionType.UIActionSetBalastTankLevel;
 	this.levelNormal = nLevelNormal;
+	this.bowOrStern = nBowOrStern;
 };
 $hxClasses["SetBalastTankLevelUIAction"] = SetBalastTankLevelUIAction;
 SetBalastTankLevelUIAction.__name__ = ["SetBalastTankLevelUIAction"];
@@ -1623,6 +1624,9 @@ SetBalastTankLevelUIAction.__super__ = UIAction;
 SetBalastTankLevelUIAction.prototype = $extend(UIAction.prototype,{
 	getLevelNormal: function() {
 		return this.levelNormal;
+	}
+	,getShipEnd: function() {
+		return this.bowOrStern;
 	}
 	,__class__: SetBalastTankLevelUIAction
 });
@@ -1639,6 +1643,11 @@ SetEnginePowerUIAction.prototype = $extend(UIAction.prototype,{
 	}
 	,__class__: SetEnginePowerUIAction
 });
+var ShipEnd = $hxClasses["ShipEnd"] = { __ename__ : true, __constructs__ : ["Stern","Bow"] };
+ShipEnd.Stern = ["Stern",0];
+ShipEnd.Stern.__enum__ = ShipEnd;
+ShipEnd.Bow = ["Bow",1];
+ShipEnd.Bow.__enum__ = ShipEnd;
 var Std = function() { };
 $hxClasses["Std"] = Std;
 Std.__name__ = ["Std"];
@@ -1694,7 +1703,8 @@ StringTools.fastCodeAt = function(s,index) {
 	return s.charCodeAt(index);
 };
 var Submarine = function() {
-	this.balastTankLevelNormal = .5;
+	this.bowBalastTankLevelNormal = .5;
+	this.sternBalastTankLevelNormal = .5;
 	this.enginePower = 1000;
 	this.engineSettingNormal = 0;
 	UnderwaterObject.call(this);
@@ -1706,7 +1716,7 @@ var Submarine = function() {
 	this.bitmap.set_width(67.1 * Constants.pixelsPerMeter);
 	var _g = this.bitmap;
 	_g.set_height(_g.get_height() * (67.1 * Constants.pixelsPerMeter / oldWidth));
-	this.bitmap.set_x(0);
+	this.bitmap.set_x(-this.bitmap.get_width() / 2);
 	this.bitmap.set_y(0);
 	this.addChild(this.bitmap);
 	this.velocity = new Vector(0,0);
@@ -1723,18 +1733,28 @@ Submarine.__super__ = UnderwaterObject;
 Submarine.prototype = $extend(UnderwaterObject.prototype,{
 	update: function(seconds) {
 		UnderwaterObject.prototype.update.call(this,seconds);
-		this.setMass(1985406 + 20000.0 * this.balastTankLevelNormal);
+		this.setMass(1985406 + 10000.0 * this.sternBalastTankLevelNormal + 10000.0 * this.bowBalastTankLevelNormal);
 		this.velocity.x += this.engineSettingNormal * (this.enginePower / this.getMass());
 		if(this.velocity.x < .00001) this.velocity.x = 0;
 		this.location.x += this.velocity.x;
 		this.location.y += this.velocity.y;
 		this.sailor.update(seconds);
+		var newRotation = 0;
+		newRotation -= (this.sternBalastTankLevelNormal - this.bowBalastTankLevelNormal) * 40;
+		motion.Actuate.tween(this,2,{ rotation : newRotation},false).ease(motion.easing.Quad.get_easeOut());
 	}
 	,setEnginePower: function(nPower) {
 		this.engineSettingNormal = nPower;
 	}
-	,setBalastTankLevelNormal: function(nLevel) {
-		this.balastTankLevelNormal = nLevel;
+	,setBalastTankLevelNormal: function(nLevel,shipEnd) {
+		switch(shipEnd[1]) {
+		case 0:
+			motion.Actuate.tween(this,4,{ sternBalastTankLevelNormal : nLevel},false).ease(motion.easing.Quad.get_easeOut());
+			break;
+		case 1:
+			motion.Actuate.tween(this,4,{ bowBalastTankLevelNormal : nLevel},false).ease(motion.easing.Quad.get_easeOut());
+			break;
+		}
 	}
 	,__class__: Submarine
 });
@@ -1776,7 +1796,11 @@ UILever.prototype = $extend(UIElement.prototype,{
 	,onResize: function(nWidth,nHeight) {
 		this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
 		this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
-		haxe.Log.trace("in onResize",{ fileName : "UILever.hx", lineNumber : 33, className : "UILever", methodName : "onResize"});
+	}
+	,setNormal: function(nNormal) {
+		nNormal = Helpers.clamp(nNormal,0,1);
+		motion.Actuate.tween(this.handle,.2,{ x : this.handle.get_x(), y : this.bitmap.get_y() + this.bitmap.get_height() - this.bitmap.get_height() * nNormal - this.handle.get_height() / 2},false).ease(motion.easing.Quad.get_easeOut());
+		this.settingNormal = nNormal;
 	}
 	,__class__: UILever
 });
@@ -1883,21 +1907,24 @@ Type.getEnumConstructs = function(e) {
 var UI = function() {
 	openfl.display.Sprite.call(this);
 	this.throttleControl = new ThrottleControl();
-	this.balastControl = new UIBalastTankControl();
+	this.sternBalastControl = new UIBalastTankControl(ShipEnd.Bow);
+	this.bowBalastControl = new UIBalastTankControl(ShipEnd.Stern);
 	this.addChild(this.throttleControl);
-	this.addChild(this.balastControl);
+	this.addChild(this.sternBalastControl);
+	this.addChild(this.bowBalastControl);
 };
 $hxClasses["UI"] = UI;
 UI.__name__ = ["UI"];
 UI.__super__ = openfl.display.Sprite;
 UI.prototype = $extend(openfl.display.Sprite.prototype,{
 	getActionsFromClick: function(x,y) {
-		var result = [this.throttleControl.onClick(x,y),this.balastControl.onClick(x,y)];
+		var result = [this.throttleControl.onClick(x,y),this.sternBalastControl.onClick(x,y),this.bowBalastControl.onClick(x,y)];
 		return result;
 	}
 	,handleResize: function(nWidth,nHeight) {
 		this.throttleControl.onResize(nWidth,nHeight);
-		this.balastControl.onResize(nWidth,nHeight);
+		this.sternBalastControl.onResize(nWidth,nHeight);
+		this.bowBalastControl.onResize(nWidth,nHeight);
 	}
 	,__class__: UI
 });
@@ -1908,21 +1935,34 @@ UIActionType.UIActionSetEnginePower = ["UIActionSetEnginePower",1];
 UIActionType.UIActionSetEnginePower.__enum__ = UIActionType;
 UIActionType.UIActionSetBalastTankLevel = ["UIActionSetBalastTankLevel",2];
 UIActionType.UIActionSetBalastTankLevel.__enum__ = UIActionType;
-var UIBalastTankControl = function() {
+var UIBalastTankControl = function(nShipEnd) {
 	UILever.call(this);
+	this.shipEnd = nShipEnd;
 	this.bitmap = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/verticlePipe.png"));
 	this.bitmap.set_width(100);
 	this.bitmap.set_height(this.bitmap.get_width() * 1.61803398875);
 	this.addChild(this.bitmap);
 	this.bitmap.set_y(openfl.Lib.current.stage.stageHeight - this.bitmap.get_height());
 	this.bitmap.set_x(255);
+	var _g = this.shipEnd;
+	switch(_g[1]) {
+	case 0:
+		var _g1 = this.bitmap;
+		_g1.set_x(_g1.get_x());
+		break;
+	case 1:
+		var _g11 = this.bitmap;
+		_g11.set_x(_g11.get_x() + 120);
+		break;
+	}
 	this.handle = new openfl.display.Bitmap(openfl.Assets.getBitmapData("assets/woodenBall.png"));
 	this.handle.set_width(160);
 	this.handle.set_height(40);
 	this.handle.set_x(this.bitmap.get_x() + this.bitmap.get_width() / 2 - this.handle.get_width() / 2);
-	this.handle.set_y(openfl.Lib.current.stage.stageHeight - this.handle.get_height());
+	this.handle.set_y(this.bitmap.get_y() + this.bitmap.get_height() - this.bitmap.get_height() * .5 - this.handle.get_height() / 2);
 	this.addChild(this.handle);
 	var limits1 = this.bitmap.getBounds(this.bitmap.parent);
+	this.setNormal(.5);
 };
 $hxClasses["UIBalastTankControl"] = UIBalastTankControl;
 UIBalastTankControl.__name__ = ["UIBalastTankControl"];
@@ -1930,9 +1970,11 @@ UIBalastTankControl.__super__ = UILever;
 UIBalastTankControl.prototype = $extend(UILever.prototype,{
 	onClick: function(mouseX,mouseY) {
 		UILever.prototype.onClick.call(this,mouseX,mouseY);
-		haxe.Log.trace("balast set to " + this.settingNormal,{ fileName : "UIBalastTankControl.hx", lineNumber : 38, className : "UIBalastTankControl", methodName : "onClick"});
 		if(Math.abs(this.settingNormal - .5) < .1) this.settingNormal = .5;
-		return new SetBalastTankLevelUIAction(this.settingNormal);
+		return new SetBalastTankLevelUIAction(this.settingNormal,this.shipEnd);
+	}
+	,getShipEnd: function() {
+		return this.shipEnd;
 	}
 	,__class__: UIBalastTankControl
 });
@@ -1965,7 +2007,8 @@ World.prototype = $extend(openfl.display.Sprite.prototype,{
 	update: function() {
 		this.ocean.set_x(-this.get_x());
 		this.boot.update(0.0333333333333333329);
-		this.set_x(-this.boot.location.x * js.Boot.__cast(Constants.pixelsPerMeter , Float) + 300.0);
+		this.set_x(-this.boot.location.x * js.Boot.__cast(Constants.pixelsPerMeter , Float) + 450.0);
+		this.set_y(-this.boot.location.y * Constants.pixelsPerMeter + this.stage.stageHeight / 3);
 	}
 	,__class__: World
 });
@@ -3730,6 +3773,109 @@ motion.actuators.TransformActuator.prototype = $extend(motion.actuators.SimpleAc
 	}
 	,__class__: motion.actuators.TransformActuator
 });
+motion.easing.Elastic = function() { };
+$hxClasses["motion.easing.Elastic"] = motion.easing.Elastic;
+motion.easing.Elastic.__name__ = ["motion","easing","Elastic"];
+motion.easing.Elastic.__properties__ = {get_easeOut:"get_easeOut",get_easeInOut:"get_easeInOut",get_easeIn:"get_easeIn"}
+motion.easing.Elastic.get_easeIn = function() {
+	return new motion.easing.ElasticEaseIn(0.1,0.4);
+};
+motion.easing.Elastic.get_easeInOut = function() {
+	return new motion.easing.ElasticEaseInOut(0.1,0.4);
+};
+motion.easing.Elastic.get_easeOut = function() {
+	return new motion.easing.ElasticEaseOut(0.1,0.4);
+};
+motion.easing.ElasticEaseIn = function(a,p) {
+	this.a = a;
+	this.p = p;
+};
+$hxClasses["motion.easing.ElasticEaseIn"] = motion.easing.ElasticEaseIn;
+motion.easing.ElasticEaseIn.__name__ = ["motion","easing","ElasticEaseIn"];
+motion.easing.ElasticEaseIn.__interfaces__ = [motion.easing.IEasing];
+motion.easing.ElasticEaseIn.prototype = {
+	calculate: function(k) {
+		if(k == 0) return 0;
+		if(k == 1) return 1;
+		var s;
+		if(this.a < 1) {
+			this.a = 1;
+			s = this.p / 4;
+		} else s = this.p / (2 * Math.PI) * Math.asin(1 / this.a);
+		return -(this.a * Math.pow(2,10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / this.p));
+	}
+	,ease: function(t,b,c,d) {
+		if(t == 0) return b;
+		if((t /= d) == 1) return b + c;
+		var s;
+		if(this.a < Math.abs(c)) {
+			this.a = c;
+			s = this.p / 4;
+		} else s = this.p / (2 * Math.PI) * Math.asin(c / this.a);
+		return -(this.a * Math.pow(2,10 * (t -= 1)) * Math.sin((t * d - s) * (2 * Math.PI) / this.p)) + b;
+	}
+	,__class__: motion.easing.ElasticEaseIn
+};
+motion.easing.ElasticEaseInOut = function(a,p) {
+	this.a = a;
+	this.p = p;
+};
+$hxClasses["motion.easing.ElasticEaseInOut"] = motion.easing.ElasticEaseInOut;
+motion.easing.ElasticEaseInOut.__name__ = ["motion","easing","ElasticEaseInOut"];
+motion.easing.ElasticEaseInOut.__interfaces__ = [motion.easing.IEasing];
+motion.easing.ElasticEaseInOut.prototype = {
+	calculate: function(k) {
+		if(k == 0) return 0;
+		if((k /= 0.5) == 2) return 1;
+		var p = 0.449999999999999956;
+		var a = 1;
+		var s = p / 4;
+		if(k < 1) return -0.5 * (Math.pow(2,10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p));
+		return Math.pow(2,-10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p) * 0.5 + 1;
+	}
+	,ease: function(t,b,c,d) {
+		if(t == 0) return b;
+		if((t /= d / 2) == 2) return b + c;
+		var s;
+		if(this.a < Math.abs(c)) {
+			this.a = c;
+			s = this.p / 4;
+		} else s = this.p / (2 * Math.PI) * Math.asin(c / this.a);
+		if(t < 1) return -0.5 * (this.a * Math.pow(2,10 * (t -= 1)) * Math.sin((t * d - s) * (2 * Math.PI) / this.p)) + b;
+		return this.a * Math.pow(2,-10 * (t -= 1)) * Math.sin((t * d - s) * (2 * Math.PI) / this.p) * 0.5 + c + b;
+	}
+	,__class__: motion.easing.ElasticEaseInOut
+};
+motion.easing.ElasticEaseOut = function(a,p) {
+	this.a = a;
+	this.p = p;
+};
+$hxClasses["motion.easing.ElasticEaseOut"] = motion.easing.ElasticEaseOut;
+motion.easing.ElasticEaseOut.__name__ = ["motion","easing","ElasticEaseOut"];
+motion.easing.ElasticEaseOut.__interfaces__ = [motion.easing.IEasing];
+motion.easing.ElasticEaseOut.prototype = {
+	calculate: function(k) {
+		if(k == 0) return 0;
+		if(k == 1) return 1;
+		var s;
+		if(this.a < 1) {
+			this.a = 1;
+			s = this.p / 4;
+		} else s = this.p / (2 * Math.PI) * Math.asin(1 / this.a);
+		return this.a * Math.pow(2,-10 * k) * Math.sin((k - s) * (2 * Math.PI) / this.p) + 1;
+	}
+	,ease: function(t,b,c,d) {
+		if(t == 0) return b;
+		if((t /= d) == 1) return b + c;
+		var s;
+		if(this.a < Math.abs(c)) {
+			this.a = c;
+			s = this.p / 4;
+		} else s = this.p / (2 * Math.PI) * Math.asin(c / this.a);
+		return this.a * Math.pow(2,-10 * t) * Math.sin((t * d - s) * (2 * Math.PI) / this.p) + c + b;
+	}
+	,__class__: motion.easing.ElasticEaseOut
+};
 motion.easing.ExpoEaseIn = function() {
 };
 $hxClasses["motion.easing.ExpoEaseIn"] = motion.easing.ExpoEaseIn;

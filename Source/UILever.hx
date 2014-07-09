@@ -14,13 +14,8 @@ class UILever extends UIElement{
 	public var settingNormal:Float=0;//0 to 1 range
 
 	public override function onClick(mouseX:Int,mouseY:Int) : UIAction{
-		
-
-
-
 		var limits1:Rectangle = bitmap.getBounds(bitmap.parent);
 		if(super.pointIsInRect(mouseX,mouseY,limits1)){
-
 			settingNormal = ((bitmap.y+bitmap.height)-mouseY)/height;
 			Actuate.tween (handle, .2, { x: handle.x, y: mouseY-handle.height/2 }, false).ease(Quad.easeOut);
 		}
@@ -30,7 +25,13 @@ class UILever extends UIElement{
 	public override function onResize(nWidth:Int,nHeight:Int){
 		handle.y=Lib.current.stage.stageHeight-handle.height;
 		bitmap.y= Lib.current.stage.stageHeight-bitmap.height;
-		trace("in onResize");
+	}
+
+	public function setNormal(nNormal:Float){
+		nNormal = Helpers.clamp(nNormal,0,1);
+		Actuate.tween (handle, .2, { x: handle.x, y: bitmap.y+bitmap.height-bitmap.height*nNormal-handle.height/2 }, false).ease(Quad.easeOut);
+		settingNormal = nNormal;
+		
 	}
 
 }

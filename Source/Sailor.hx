@@ -9,9 +9,10 @@ import openfl.Assets;
 
 class Sailor extends Actor {
 	
-	//sub is x= 10m to x=55m
+	//sub is x= -21m to x=21m
+	//sub hall is 42 meters
 	var walkSpeed:Float = 2.0;
-	var targetXLocation:Float = 20;
+	var targetXLocation:Float = 21;
 
 	public function new () {
 		super();
@@ -20,10 +21,10 @@ class Sailor extends Actor {
 
 		super ();
 		bitmap = new Bitmap (Assets.getBitmapData ("assets/standingSailor.png"));
-		bitmap.width = 22;
-		bitmap.height = 22;
+		bitmap.width = 25;
+		bitmap.height = 25;
 		addChild(bitmap);
-		location.x = 55;
+		location.x = -21;
 		location.y=6.2;
 		
 	}

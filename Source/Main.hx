@@ -61,7 +61,9 @@ class Main extends Sprite {
 			case UIActionSetEnginePower:
 				world.boot.setEnginePower(cast(action,SetEnginePowerUIAction).getPowerNormal());
 			case UIActionSetBalastTankLevel:
-				world.boot.setBalastTankLevelNormal(cast(action,SetBalastTankLevelUIAction).getLevelNormal());
+				world.boot.setBalastTankLevelNormal(
+					cast(action,SetBalastTankLevelUIAction).getLevelNormal(),
+					cast(action,SetBalastTankLevelUIAction).getShipEnd());
 
 		}
 	}

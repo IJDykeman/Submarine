@@ -1,0 +1,4 @@
+enum ShipEnd{
+	Stern;
+	Bow;
+}

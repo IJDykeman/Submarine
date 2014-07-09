@@ -27,7 +27,7 @@ class ThrottleControl extends UILever{
 		handle.x = bitmap.x+bitmap.width/2-handle.width/2;
 		handle.y=Lib.current.stage.stageHeight-handle.height;
 		addChild(handle);
-		
+
 
 	}
 
